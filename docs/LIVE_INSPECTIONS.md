@@ -136,6 +136,13 @@ Run the cross-service test:
 node --test backend/test/cmep-live-e2e.test.js
 ```
 
+The whole suite starts several mediasoup workers and two platform instances;
+on a phone it is reliable only **serially**:
+
+```sh
+node --test --test-concurrency=1 backend/test/*.test.js
+```
+
 It starts the platform (`scripts/cmep_live_inspection_e2e_server.py` in
 `waste-platform`, hermetic SQLite, random port) and the streaming service on
 a random port, then exercises the full flow.

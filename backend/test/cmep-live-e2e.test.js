@@ -17,8 +17,9 @@ const SECRET = 'http-adapter-test-secret-0123456789abcdef';
 const INTERNAL_KEY = 'internal-key-test-0123456789abcdef0123456789';
 const PLATFORM_SCRIPT = '/data/data/com.termux/files/home/waste-platform/scripts/cmep_live_inspection_e2e_server.py';
 const PLATFORM_PY = '/data/data/com.termux/files/home/waste-platform/.venv/bin/python';
-const PLATFORM_PORT = 8765;
-const TOKEN_PATH = '/data/data/com.termux/files/usr/tmp/opencode/cmep-e2e-tokens.json';
+// Unikatny tokenovy subor na beh: subezne E2E inštancie by si inak prepisali
+// rovnaky subor (stary token vs. nova DB -> 401 User not found).
+const TOKEN_PATH = `/data/data/com.termux/files/usr/tmp/opencode/cmep-e2e-tokens-${process.pid}-${Date.now()}.json`;
 
 function freePort() {
   return new Promise((resolve, reject) => {
@@ -59,13 +60,14 @@ async function startStreamingServer(port, platformBase) {
   throw new Error(`streaming did not boot: ${stderr.slice(0, 600)}`);
 }
 
-async function startPlatform(streamingPort) {
+async function startPlatform(streamingPort, platformPort) {
   try { fs.unlinkSync(TOKEN_PATH); } catch {}
   const child = spawn(PLATFORM_PY, [PLATFORM_SCRIPT], {
     cwd: '/data/data/com.termux/files/home/waste-platform',
     env: {
       ...process.env,
       E2E_TOKENS_PATH: TOKEN_PATH,
+      E2E_PORT: String(platformPort),
       CMEP_STREAMING_SIGNING_SECRET: SECRET,
       CMEP_INTERNAL_API_KEY: INTERNAL_KEY,
       CMEP_STREAMING_PUBLIC_URL: `http://127.0.0.1:${streamingPort}`,
@@ -76,7 +78,7 @@ async function startPlatform(streamingPort) {
   let stderr = '';
   child.stderr.on('data', d => { stderr += d.toString(); });
   child.stdout.on('data', d => { stderr += d.toString(); });
-  const base = `http://127.0.0.1:${PLATFORM_PORT}`;
+  const base = `http://127.0.0.1:${platformPort}`;
   const start = Date.now();
   while (Date.now() - start < 90000) {
     if (fs.existsSync(TOKEN_PATH)) return { child, stderr };
@@ -98,7 +100,8 @@ async function waitForTokens(timeoutMs = 120000) {
 
 function decodeClaims(token) {
   const payload = String(token || '').split('.')[0];
-  const padded = payload + '=' * (-payload.length % 4);
+  const pad = (4 - (payload.length % 4)) % 4;
+  const padded = payload + '='.repeat(pad);
   return JSON.parse(Buffer.from(padded, 'base64url').toString('utf8'));
 }
 
@@ -148,13 +151,19 @@ async function authFetch(base, method, url, token, body, retries = 3) {
 
 test('cross-service CMEP live inspection E2E (platform <-> streaming)', { timeout: 240000 }, async () => {
   const streamingPort = await freePort();
-  const { child: platformProc, stderr } = await startPlatform(streamingPort);
+  const platformPort = await freePort();
+  const { child: platformProc, stderr } = await startPlatform(streamingPort, platformPort);
   process.on('exit', () => { try { platformProc.kill('SIGKILL'); } catch {} });
   const tokens = await waitForTokens();
   const base = tokens.baseUrl; // http://127.0.0.1:8765 (pevne v seed skripte)
 
   // 1. Owner spusti obhliadku z ponuky -> publisher token (platforma)
   const create = await authFetch(base, 'POST', '/api/v1/inspections', tokens.ownerToken, { listingId: tokens.listingId });
+  if (create.status !== 201) {
+    console.error('[E2E][tokenPath]', TOKEN_PATH);
+    console.error('[E2E][base]', base, '| listing', tokens.listingId);
+    console.error('[E2E][ownerSub]', tokens.ownerUserId);
+  }
   assert.equal(create.status, 201, `create failed: ${create.status} ${create.text}`);
   assert.ok(create.json.publishUrl, 'publishUrl expected');
   assert.equal(create.json.role, 'publisher');
@@ -167,9 +176,6 @@ test('cross-service CMEP live inspection E2E (platform <-> streaming)', { timeou
   assert.equal(pubUrl.origin, `http://127.0.0.1:${streamingPort}`, 'publishUrl ukazuje na streaming');
   assert.equal(offer, inspectionId);
   const pubClaims = decodeClaims(pubToken);
-  console.log('DEBUG pubToken len=', pubToken.length, 'parts=', pubToken.split('.').length, 'lastchars=', [...pubToken.slice(-6)].map(c=>c.charCodeAt(0)));
-  const p0 = pubToken.split('.')[0];
-  console.log('DEBUG p0 len=', p0.length, 'decoded=', JSON.stringify(Buffer.from(p0 + '=' * (-p0.length % 4), 'base64url').toString('utf8')));
   assert.equal(pubClaims.sub, tokens.ownerUserId);
   assert.equal(pubClaims.role, 'publisher');
   assert.equal(pubClaims.insp, inspectionId);
@@ -266,9 +272,6 @@ test('cross-service CMEP live inspection E2E (platform <-> streaming)', { timeou
   assert.equal(h.media.peers, 0, `peers should be 0`);
   assert.equal(h.media.workerAlive, true, `worker should be alive: ${JSON.stringify(h.media)}`);
 
-  publisher.ws.close();
-  viewer.ws.close();
-  await wait(1000);
   srv.child.kill('SIGTERM');
   await wait(1500);
   platformProc.kill('SIGTERM');

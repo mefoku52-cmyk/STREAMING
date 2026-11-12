@@ -130,10 +130,10 @@ async function createSignaling({
           newRoom.state = 'pending';
           peer.role = 'publisher';
           peer.roomId = newRoom.id;
-          newRoom.participants.set(claims.sub, peer);
-          events.emit(adapter, { type: 'inspection_requested', roomId: newRoom.id, offerId, actorSub: claims.sub, role: 'owner' });
-          events.emit(adapter, { type: 'participant_joined', roomId: newRoom.id, offerId: newRoom.offerId, actorSub: claims.sub, role: 'publisher' });
-          log.info('room created', { roomId: newRoom.id, offerId });
+  newRoom.participants.set(claims.sub, peer);
+  await events.emit(adapter, { type: 'inspection_requested', roomId: newRoom.id, offerId, actorSub: claims.sub, role: 'owner' });
+  await events.emit(adapter, { type: 'participant_joined', roomId: newRoom.id, actorSub: claims.sub, role: 'publisher' });
+  log.info('room created', { roomId: newRoom.id, offerId });
           return { roomId: newRoom.id, state: newRoom.state, role: peer.role };
         }
         case 'joinRoom': {
