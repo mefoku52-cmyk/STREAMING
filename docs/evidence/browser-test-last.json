@@ -1,0 +1,115 @@
+{
+  "at": "2026-11-12T00:47:24.386Z",
+  "results": [
+    {
+      "step": "server.healthz",
+      "pass": true,
+      "detail": "rooms=0 peers=0 worker=true"
+    },
+    {
+      "step": "chromium.launch",
+      "pass": true,
+      "detail": "pid=21683 (fake media, auto-grant, autoplay-on)"
+    },
+    {
+      "step": "browser.contexts",
+      "pass": true,
+      "detail": "2 izolované browserové kontexty (publisher + viewer)"
+    },
+    {
+      "step": "publisher.preview",
+      "pass": true,
+      "detail": "getUserMedia fake zariadenie OK"
+    },
+    {
+      "step": "publisher.createRoom",
+      "pass": true,
+      "detail": "roomId=5d0457cb-0b39-4435-ac1c-b12c599407a1"
+    },
+    {
+      "step": "publisher.producers",
+      "pass": true,
+      "detail": "audio:live, video:live"
+    },
+    {
+      "step": "viewer.prefill",
+      "pass": true,
+      "detail": "token len=144, room match=true"
+    },
+    {
+      "step": "viewer.request",
+      "pass": true,
+      "detail": "requestInspection odoslaná"
+    },
+    {
+      "step": "push.inspectionRequested",
+      "pass": true,
+      "detail": "publisher obdržal push event (zobrazený v UI)"
+    },
+    {
+      "step": "owner.accept",
+      "pass": true,
+      "detail": "state=accepted"
+    },
+    {
+      "step": "viewer.joined",
+      "pass": true,
+      "detail": "roomId=5d0457cb-0b39-4435-ac1c-b12c599407a1"
+    },
+    {
+      "step": "viewer.consumers",
+      "pass": true,
+      "detail": "video=true audio(owner)=true"
+    },
+    {
+      "step": "recorder.start",
+      "pass": true,
+      "detail": "recordingId=rec-mwctvp2f-2"
+    },
+    {
+      "step": "recorder.file",
+      "pass": true,
+      "detail": "5d0457cb-0b39-4435-ac1c-b12c599407a1-rec-mwctvp2f-2.flv"
+    },
+    {
+      "step": "recorder.rtpInbound",
+      "pass": true,
+      "detail": "5d0457cb-0b39-4435-ac1c-b12c599407a1-rec-mwctvp2f-2.flv: 0B → 262144B (rastie = RTP tečie)"
+    },
+    {
+      "step": "viewer.videoPlayback",
+      "pass": true,
+      "detail": "currentTime 7.17s → 9.69s (+2.52s)"
+    },
+    {
+      "step": "viewer.audioPlayback",
+      "pass": true,
+      "detail": "audio currentTime 9.86s → 11.38s"
+    },
+    {
+      "step": "reverse.newProducer",
+      "pass": true,
+      "detail": "push newProducer → publisher consumeFrom (viewer audio)"
+    },
+    {
+      "step": "reverse.viewerMicToPublisher",
+      "pass": true,
+      "detail": "publisher remoteAudio 2.12s → 3.65s (viewer audio tečie k publisherovi)"
+    },
+    {
+      "step": "recorder.stop",
+      "pass": true,
+      "detail": "stopRecording OK"
+    },
+    {
+      "step": "recorder.ffprobe",
+      "pass": true,
+      "detail": "audio packets=698, size=262144B, duration=0s, codecs=h264+aac"
+    },
+    {
+      "step": "cleanup.healthz",
+      "pass": true,
+      "detail": "rooms=0 peers=0 worker=true"
+    }
+  ]
+}
