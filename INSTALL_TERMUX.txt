@@ -1,0 +1,25 @@
+TERMUX INSTALL — PACKAGE 1/5
+
+Run from Termux. This creates a separate directory and refuses overwrite. It does not read or alter ~/live-prototype.
+
+cat > "$HOME/install_cmep_part1.sh" <<'EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+set -euo pipefail
+ROOT="$HOME/cmep-streaming"
+if [ -e "$ROOT" ]; then echo "Refusing overwrite: $ROOT exists"; exit 2; fi
+mkdir -p "$ROOT"
+# Extract this package ZIP into a temporary folder first, then set PKG to that folder:
+PKG="${1:?Usage: bash install_cmep_part1.sh /path/to/unzipped/package}"
+cp -a "$PKG/." "$ROOT/"
+cd "$ROOT"
+npm install
+cp -n .env.example .env || true
+node --check backend/src/index.js
+python -m py_compile backend/python/server.py
+printf '
+Package 1 installed at %s
+' "$ROOT"
+printf 'Next: inspect README and start services only after configuring .env
+'
+EOF
+bash "$HOME/install_cmep_part1.sh" /path/to/unzipped/package

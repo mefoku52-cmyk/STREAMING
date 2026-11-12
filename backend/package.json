@@ -1,0 +1,20 @@
+{
+  "name": "cmep-streaming-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "check": "node --check src/index.js && for f in src/*.js src/adapter/*.js; do node --check \"$f\" || exit 1; done && python3 -m py_compile ../python/server.py",
+    "test": "node --test test/",
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "allowScripts": {
+    "mediasoup@3.32.2": true
+  },
+  "dependencies": {
+    "mediasoup": "3.32.2",
+    "mediasoup-client": "3.26.0",
+    "ws": "8.18.0"
+  }
+}

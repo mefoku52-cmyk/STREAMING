@@ -1,0 +1,8 @@
+{
+  "web": [8402],
+  "signaling": [8404],
+  "websocket": [8404],
+  "mediasoupRtcRange": [40000, 40100],
+  "rtpLoopbackOnly": [7020, 7021, 7022, 7023, 7030, 7031, 7032, 7033],
+  "note": "Illustrative development allocation only. Validate availability and firewall/NAT requirements on target."
+}

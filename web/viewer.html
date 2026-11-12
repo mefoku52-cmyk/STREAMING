@@ -1,0 +1,12 @@
+<!doctype html><html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CMEP Live Inspection — Viewer</title><link rel="stylesheet" href="/app.css"></head><body><main><h1>Viewer — živá obhliadka</h1>
+<label>Token (dev) <input id="token" autocomplete="off" placeholder="z mint-token.sh alebo z CMEP platformy"></label>
+<label>Room ID <input id="room" autocomplete="off" placeholder="vyplní sa automaticky z CMEP"></label>
+<p><button id="connect">Pripojiť a žiadať obhliadku</button> <button id="micToggle" disabled>Mikrofón OFF</button> <button id="stop" disabled>Odpojiť</button> <button id="enableAudio" hidden>Zapnúť zvuk</button></p>
+<p>Stav spojenia: <span id="connState" data-state="new">—</span> · Kamera: <span id="camState">—</span> · Mikrofón: <span id="micState">vypnutý</span> · Hovor: <span id="callState">neaktívny</span></p>
+<video id="remote" autoplay playsinline></video>
+<audio id="remoteAudio" autoplay></audio>
+<pre id="state" role="status">Nepripojený.</pre>
+<script src="/vendor/mediasoup-client.min.js"></script>
+<script src="/rpc.js"></script>
+<script src="/viewer.js" defer></script>
+</main></body></html>
