@@ -72,6 +72,7 @@ test('server integration: boot, auth, ACL, room lifecycle, shutdown', { timeout:
     env: {
       ...process.env,
       SIGNALING_PORT: String(port),
+      MAX_ROOMS: '1',
       SESSION_SIGNING_SECRET: SECRET,
       RUNTIME_DIR: runtimeDir,
       LOG_LEVEL: 'warn',
@@ -98,8 +99,11 @@ test('server integration: boot, auth, ACL, room lifecycle, shutdown', { timeout:
   for (let i = 0; i < 90 && !up; i++) {
     await wait(500);
     try {
-      const res = await fetch(`http://127.0.0.1:${port}/healthz`);
-      if (res.ok) up = true;
+      const res = await fetch(`http://127.0.0.1:${port}/readyz`);
+      if (res.ok) {
+        const payload = await res.json();
+        up = payload.ready === true;
+      }
     } catch {}
   }
   assert.ok(up, `server did not come up; stderr: ${stderr.slice(0, 500)}`);
@@ -116,6 +120,7 @@ test('server integration: boot, auth, ACL, room lifecycle, shutdown', { timeout:
   // healthz payload
   const hz = await (await fetch(`http://127.0.0.1:${port}/healthz`)).json();
   assert.equal(hz.ok, true);
+  assert.equal(hz.ready, true);
 
   // --- auth: unauthorized connections are closed with 4401 ---
   const anon = await connect(port, null);
@@ -128,6 +133,16 @@ test('server integration: boot, auth, ACL, room lifecycle, shutdown', { timeout:
   const ownerTok = issueLocalSessionToken({ sub: 'owner-1', companyId: 'co-1', ttlSeconds: 600, secret: SECRET });
   const viewerTok = issueLocalSessionToken({ sub: 'viewer-1', companyId: 'co-1', ttlSeconds: 600, secret: SECRET });
   const viewer2Tok = issueLocalSessionToken({ sub: 'viewer-2', companyId: 'co-1', ttlSeconds: 600, secret: SECRET });
+
+  // Phase 3F regression guard: once readyz is true, repeated /ws handshakes must
+  // complete with HTTP 101 and the signaling RPC must answer (not an early 404).
+  for (let i = 0; i < 5; i++) {
+    const probe = await connect(port, ownerTok);
+    const caps = await probe.rpc('getRouterRtpCapabilities');
+    assert.ok(caps && Array.isArray(caps.codecs), `WebSocket probe ${i + 1} returned capabilities`);
+    probe.close();
+    await wait(50);
+  }
 
   const owner = await connect(port, ownerTok);
   const hello = await owner.rpc('createRoom', { offerId: 'offer-9' });
@@ -197,6 +212,7 @@ test('server integration: boot, auth, ACL, room lifecycle, shutdown', { timeout:
   // server still healthy after churn
   const hz2 = await (await fetch(`http://127.0.0.1:${port}/healthz`)).json();
   assert.equal(hz2.ok, true);
+  assert.equal(hz2.ready, true);
 
   // graceful shutdown on SIGTERM, lock released
   child.kill('SIGTERM');

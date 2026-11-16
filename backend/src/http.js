@@ -34,10 +34,12 @@ function notFound(res) {
 
 function createHttpServer({ host, port, health, webRoot, staticEnabled = true, internal = null }) {
   const server = http.createServer((req, res) => {
-    if (req.method === 'GET' && req.url === '/healthz') {
-      const body = JSON.stringify(health());
-      res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
-      res.end(body); return;
+    if (req.method === 'GET' && (req.url === '/healthz' || req.url === '/readyz')) {
+      const body = health();
+      const ready = body.ready === true;
+      const readinessProbe = req.url === '/readyz';
+      res.writeHead(readinessProbe && !ready ? 503 : 200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+      res.end(JSON.stringify(body)); return;
     }
     // Interne rozhranie platformy (CMEP) — POST /internal/*. Vrati true ak
     // poziadavku obsluzi (aj async). Vysledok je JSON.

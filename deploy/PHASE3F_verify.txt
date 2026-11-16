@@ -1,0 +1,27 @@
+CMEP STREAMING — PHASE 3F VERIFICATION
+Date: 2026-11-16 (sandbox local verification)
+Scope: local source checkout only; no production/provider access.
+
+Current source examined: STREAMING main baseline 3a76182741764b215acb88254886b7f44486bf5e plus uncommitted local readiness/test changes on branch manus/streaming-readiness-max-rooms.
+Historical deploy/PHASE3F_verify.txt was not present in the checked-out baseline. No earlier run logs were available to attribute the original 4/5 handshake failures conclusively.
+
+Evidence and diagnosis:
+- /healthz previously always returned HTTP 200 and did not distinguish media/signaling readiness.
+- The HTTP listener starts before asynchronous mediasoup/signaling initialization completes. The WebSocket upgrade handler is installed only during createSignaling.
+- Before the upgrade handler exists, a premature GET/Upgrade request for /ws is handled as an ordinary HTTP request and the missing static route can return HTTP 404. This startup race was reproduced in backend/test/http-readiness.test.js: premature /ws handshake => 404 while /readyz => 503.
+- This is a reproduced failure mode consistent with the reported symptom, not proof that it was the only cause of historical production/test failures; original exact URL/logs and deployed revision were unavailable.
+
+Changes under verification:
+- Added `ready` to /healthz and a separate /readyz endpoint: HTTP 503 until signaling exists and mediasoup worker reports alive; HTTP 200 only when ready === true.
+- Updated integration test startup polling to require /readyz success and payload.ready === true.
+- Added five authenticated /ws handshake + signaling-RPC probes per integration run after readiness.
+
+Commands/results:
+1) `node --test test/integration.test.js` repeated as 5 separate processes: 5/5 test runs PASS; each run performed 5 sequential /ws handshake+RPC probes (25 probes total); no HTTP 404 observed after readiness.
+2) `CMEP_PLATFORM_ROOT=/tmp/cmep-audit/waste-platform CMEP_PLATFORM_PYTHON=/tmp/cmep-audit/waste-platform/.venv/bin/python npm test`: 31 tests PASS, 0 FAIL, 0 skipped. Includes local cross-service CMEP inspection E2E against temporary SQLite and local services.
+3) `npm run check`: PASS.
+4) `npm audit --audit-level=low`: 0 vulnerabilities after ws 8.23.0 update.
+
+Limitations:
+- Local tests only. No TURN relay, real public network, mobile browser, production DNS/TLS/WSS, deployed provider or production media path was tested by this verification.
+- Do not describe this as production verification or as conclusive attribution of the historical failure without original failure logs.

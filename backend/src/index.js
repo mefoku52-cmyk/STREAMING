@@ -99,7 +99,8 @@ async function main() {
     health: () => {
       let media = { rooms: 0, peers: 0, workerAlive: false };
       try { media = signaling.status(); } catch { /* signaling este nie je inicializovane */ }
-      return { ok: true, service: config.appName, status: 'running', nodeEnv: config.nodeEnv, uptimeS: Math.floor((Date.now() - startedAt) / 1000), media };
+      const ready = Boolean(signaling && media.workerAlive === true);
+      return { ok: true, ready, service: config.appName, status: ready ? 'ready' : 'starting', nodeEnv: config.nodeEnv, uptimeS: Math.floor((Date.now() - startedAt) / 1000), media };
     },
     // Interne platformove rozhranie (X-CMEP-Internal-Key, fail-closed).
     internal: (req, res) => internalRequestHandler(req, res, () => signaling, config),

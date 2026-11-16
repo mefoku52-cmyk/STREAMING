@@ -15,11 +15,11 @@ const WebSocket = require('../node_modules/ws');
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 const SECRET = 'http-adapter-test-secret-0123456789abcdef';
 const INTERNAL_KEY = 'internal-key-test-0123456789abcdef0123456789';
-const PLATFORM_SCRIPT = '/data/data/com.termux/files/home/waste-platform/scripts/cmep_live_inspection_e2e_server.py';
-const PLATFORM_PY = '/data/data/com.termux/files/home/waste-platform/.venv/bin/python';
-// Unikatny tokenovy subor na beh: subezne E2E inštancie by si inak prepisali
-// rovnaky subor (stary token vs. nova DB -> 401 User not found).
-const TOKEN_PATH = `/data/data/com.termux/files/usr/tmp/opencode/cmep-e2e-tokens-${process.pid}-${Date.now()}.json`;
+const PLATFORM_ROOT = path.resolve(process.env.CMEP_PLATFORM_ROOT || path.resolve(__dirname, '../../../waste-platform'));
+const PLATFORM_SCRIPT = path.join(PLATFORM_ROOT, 'scripts/cmep_live_inspection_e2e_server.py');
+const PLATFORM_PY = process.env.CMEP_PLATFORM_PYTHON || path.join(PLATFORM_ROOT, '.venv/bin/python');
+// Keep per-process E2E tokens in the OS temp directory, never in the repository.
+const TOKEN_PATH = path.join(os.tmpdir(), `cmep-e2e-tokens-${process.pid}-${Date.now()}.json`);
 
 function freePort() {
   return new Promise((resolve, reject) => {
@@ -53,8 +53,8 @@ async function startStreamingServer(port, platformBase) {
   for (let i = 0; i < 60; i++) {
     await wait(500);
     try {
-      const res = await fetch(`http://127.0.0.1:${port}/healthz`);
-      if (res.ok) return { child, runtimeDir, stderr };
+      const res = await fetch(`http://127.0.0.1:${port}/readyz`);
+      if (res.ok && (await res.json()).ready === true) return { child, runtimeDir, stderr };
     } catch {}
   }
   throw new Error(`streaming did not boot: ${stderr.slice(0, 600)}`);
@@ -62,12 +62,14 @@ async function startStreamingServer(port, platformBase) {
 
 async function startPlatform(streamingPort, platformPort) {
   try { fs.unlinkSync(TOKEN_PATH); } catch {}
-  const child = spawn(PLATFORM_PY, [PLATFORM_SCRIPT], {
-    cwd: '/data/data/com.termux/files/home/waste-platform',
+  const python = fs.existsSync(PLATFORM_PY) ? PLATFORM_PY : (process.env.PYTHON || 'python3');
+  const child = spawn(python, [PLATFORM_SCRIPT], {
+    cwd: PLATFORM_ROOT,
     env: {
       ...process.env,
       E2E_TOKENS_PATH: TOKEN_PATH,
       E2E_PORT: String(platformPort),
+      PYTHONPATH: [PLATFORM_ROOT, process.env.PYTHONPATH].filter(Boolean).join(path.delimiter),
       CMEP_STREAMING_SIGNING_SECRET: SECRET,
       CMEP_INTERNAL_API_KEY: INTERNAL_KEY,
       CMEP_STREAMING_PUBLIC_URL: `http://127.0.0.1:${streamingPort}`,
@@ -76,12 +78,15 @@ async function startPlatform(streamingPort, platformPort) {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   let stderr = '';
+  let exit = null;
+  child.on('exit', (code, signal) => { exit = { code, signal }; });
   child.stderr.on('data', d => { stderr += d.toString(); });
   child.stdout.on('data', d => { stderr += d.toString(); });
   const base = `http://127.0.0.1:${platformPort}`;
   const start = Date.now();
   while (Date.now() - start < 90000) {
     if (fs.existsSync(TOKEN_PATH)) return { child, stderr };
+    if (exit) throw new Error(`platform runner exited (${exit.code ?? exit.signal}): ${stderr.slice(0, 800)}`);
     await wait(500);
   }
   throw new Error(`platform did not write tokens on ${base}: ${stderr.slice(0, 800)}`);
@@ -150,6 +155,7 @@ async function authFetch(base, method, url, token, body, retries = 3) {
 }
 
 test('cross-service CMEP live inspection E2E (platform <-> streaming)', { timeout: 240000 }, async () => {
+  assert.ok(fs.existsSync(PLATFORM_SCRIPT), `platform E2E runner missing: ${PLATFORM_SCRIPT}`);
   const streamingPort = await freePort();
   const platformPort = await freePort();
   const { child: platformProc, stderr } = await startPlatform(streamingPort, platformPort);

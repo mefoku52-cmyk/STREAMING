@@ -27,6 +27,7 @@ async function createSignaling({
   server, mediasoup, mediaCodecs, authenticate, adapter,
   listenIps = [{ ip: '127.0.0.1' }],
   rateLimit = { limit: 30, windowMs: 5000 },
+  maxRooms = 10,
   events,
   recorder = null,
 }) {
@@ -125,7 +126,7 @@ async function createSignaling({
           if (room) throw new Error('already_in_room');
           const offerId = String(msg.data?.offerId || '');
           if (!(await adapter.canCreateInspection(claims, offerId))) throw new Error('forbidden');
-          if (rooms.size() >= 10) throw new Error('too_many_rooms');
+          if (rooms.size() >= maxRooms) throw new Error('too_many_rooms');
           const newRoom = rooms.create({ ownerId: claims.sub, offerId });
           newRoom.state = 'pending';
           peer.role = 'publisher';

@@ -5,3 +5,5 @@ const {loadConfig}=require('../src/config');
 // default (docs/PORTS.md, README, .env.example); test bol zostatkom po zmene portu
 // (predchádzajúce správanie servera sa týmto nemení, len test zopisuje realitu).
 test('config uses loopback defaults',()=>{const old={...process.env};delete process.env.SIGNALING_HOST;delete process.env.SIGNALING_PORT;const c=loadConfig();assert.equal(c.host,'127.0.0.1');assert.equal(c.port,8504);process.env=old;});
+
+test('config exposes configurable room capacity',()=>{const old=process.env.MAX_ROOMS;process.env.MAX_ROOMS='17';try{assert.equal(loadConfig().maxRooms,17);}finally{if(old===undefined)delete process.env.MAX_ROOMS;else process.env.MAX_ROOMS=old;}});
