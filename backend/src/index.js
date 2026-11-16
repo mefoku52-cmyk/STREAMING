@@ -12,6 +12,7 @@ const { createRecorder } = require('./recorder');
 const { emit } = require('./events');
 const mediasoup = require('mediasoup');
 const { verifyLocalSessionToken } = require('./auth');
+const { createTurnService } = require('./turn-credentials');
 
 const MEDIA_CODECS = [
   { kind: 'audio', mimeType: 'audio/opus', clockRate: 48000, channels: 2, preferredPayloadType: 97 },
@@ -98,13 +99,15 @@ async function main() {
     // placeholder (rooms/peers = 0, workerAlive = false).
     health: () => {
       let media = { rooms: 0, peers: 0, workerAlive: false };
-      try { media = signaling.status(); } catch { /* signaling este nie je inicializovane */ }
-      return { ok: true, service: config.appName, status: 'running', nodeEnv: config.nodeEnv, uptimeS: Math.floor((Date.now() - startedAt) / 1000), media };
+      let ready = false;
+      try { media = signaling.status(); ready = Boolean(media && media.workerAlive); } catch { ready = false; }
+      return { ok: true, ready, service: config.appName, status: ready ? 'running' : 'starting', nodeEnv: config.nodeEnv, uptimeS: Math.floor((Date.now() - startedAt) / 1000), media };
     },
     // Interne platformove rozhranie (X-CMEP-Internal-Key, fail-closed).
     internal: (req, res) => internalRequestHandler(req, res, () => signaling, config),
   });
 
+  const turnService = createTurnService(config);
   signaling = await createSignaling({
     server,
     mediasoup,
@@ -113,6 +116,7 @@ async function main() {
     listenIps: media.listenIps,
     events: { emit },
     recorder,
+    turnService,
     authenticate: async (token) => {
       const claims = verifyLocalSessionToken(token, config.sessionSecret);
       if (!claims) throw new Error('unauthorized');

@@ -3,6 +3,7 @@ const METHODS = new Set([
   'createRoom', 'joinRoom', 'leaveRoom', 'getRouterRtpCapabilities',
   'createWebRtcTransport', 'connectTransport', 'produce', 'consume', 'resumeConsumer',
   'requestInspection', 'acceptInspection', 'rejectInspection', 'startRecording', 'stopRecording', 'close',
+  'getIceServers', 'restartIce', 'resumeSession',
 ]);
 function parseMessage(raw) {
   if (Buffer.byteLength(raw) > 64 * 1024) throw new Error('message_too_large');

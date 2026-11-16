@@ -1,0 +1,28 @@
+[Unit]
+Description=CMEP Streaming — standalone WebRTC live-inspection service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cmep-streaming
+Group=cmep-streaming
+WorkingDirectory=/opt/cmep-streaming
+EnvironmentFile=/etc/cmep-streaming.env
+ExecStart=/usr/bin/node backend/src/index.js
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+# Graceful shutdown: SIGTERM handled in backend/src/index.js (close rooms, release lock, exit 0)
+KillSignal=SIGTERM
+TimeoutStopSec=15
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/lib/cmep-streaming/runtime /var/lib/cmep-streaming/recordings
+# Logs to journald
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

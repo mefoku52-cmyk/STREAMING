@@ -34,7 +34,7 @@ function notFound(res) {
 
 function createHttpServer({ host, port, health, webRoot, staticEnabled = true, internal = null }) {
   const server = http.createServer((req, res) => {
-    if (req.method === 'GET' && req.url === '/healthz') {
+    if ((req.method === 'GET' && req.url === '/healthz') || (req.method === 'GET' && req.url === '/health')) {
       const body = JSON.stringify(health());
       res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
       res.end(body); return;

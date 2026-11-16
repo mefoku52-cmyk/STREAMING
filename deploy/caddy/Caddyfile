@@ -1,0 +1,26 @@
+{
+  email off
+  acme_ca https://acme-v02.api.letsencrypt.org/directory
+}
+
+# Nahradte streaming.cmep.example.com skutočnou domenou VPS.
+streaming.cmep.example.com {
+
+  # Automatic HTTPS (Let's Encrypt). WSS funguje cez rovnaký port 443.
+  tls {
+    protocols tls1.2 tls1.3
+  }
+
+  # Reverzný proxy na Node.js signaling/HTTP/WebSocket server (port 8504).
+  # Backend obsluhuje aj statické súbory (/publish.html, /viewer.html, /vendor/*) a /health(z).
+  # Caddy automaticky spracuje WebSocket upgrade.
+  reverse_proxy localhost:8504 {
+    header_up Host {host}
+    header_up X-Real-IP {remote_host}
+    header_up X-Forwarded-For {remote_host}
+    header_up X-Forwarded-Proto {scheme}
+    transport http {
+      versions h1 h2c
+    }
+  }
+}

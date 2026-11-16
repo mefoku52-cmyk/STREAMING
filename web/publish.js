@@ -7,9 +7,18 @@ const say = (m) => { stateEl.textContent = m; };
 let stream = null;
 let wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.hostname + ':8504/ws';
 let rpc = null, device = null, sendTransport = null, recvTransport = null, roomId = null, producers = [];
+let currentToken = '';
+let currentOfferId = '';
+let reconnecting = false;
+let reconnectAttempts = 0;
+let stoppedByUser = true;
+let joined = false;
+let creating = false;
+let acceptedViewer = null;
+const MAX_RECONNECT_ATTEMPTS = 8;
+const consumedProducerIds = new Set();
+const knownConsumers = new Map();
 
-// CMEP platforma otvára túto stránku s tokenom + Offer/Inspection ID v URL
-// (žiadne ručné kopírovanie). Ručné zadávanie zostáva funkčné pre dev režim.
 const qp = new URLSearchParams(location.search);
 if (qp.get('token')) document.querySelector('#token').value = qp.get('token');
 if (qp.get('offer')) document.querySelector('#offer').value = qp.get('offer');
@@ -20,10 +29,30 @@ const micStateEl = document.querySelector('#micState');
 const callStateEl = document.querySelector('#callState');
 const setConn = (state) => { if (connEl) { connEl.textContent = state; connEl.dataset.state = state; } };
 const setCall = (state) => { if (callStateEl) callStateEl.textContent = state; };
-function wireConnectionState(transport) {
+let iceRestarting = false;
+async function restartTransportIce(transport, label) {
+  if (!transport || !rpc || !rpc.isOpen() || iceRestarting || reconnecting) return;
+  iceRestarting = true;
+  try {
+    say(`Obnovujem ICE (${label})…`);
+    const r = await rpc.request('restartIce', { transportId: transport.id });
+    await transport.restartIce({ iceParameters: r.iceParameters });
+    say('ICE obnovené.');
+  } catch (e) {
+    if (!reconnecting) say(`ICE restart zlyhal: ${e.message}`);
+  } finally { iceRestarting = false; }
+}
+function wireConnectionState(transport, label) {
   if (!transport || typeof transport.on !== 'function') return;
-  const update = () => setConn(transport.connectionState || 'new');
-  transport.on('connectionstatechange', update);
+  const update = (st) => {
+    const state = st || transport.connectionState || 'new';
+    setConn(state);
+    if (state === 'failed') restartTransportIce(transport, label || 'transport');
+  };
+  transport.on('connectionstatechange', (st) => {
+    update(st);
+    if (st === 'disconnected') setTimeout(() => { if (transport.connectionState === 'disconnected' || transport.connectionState === 'failed') restartTransportIce(transport, label || 'transport'); }, 3000);
+  });
   update();
 }
 function refreshDeviceStates() {
@@ -33,17 +62,9 @@ function refreshDeviceStates() {
   if (micStateEl) micStateEl.textContent = at ? (at.enabled ? 'zapnutý' : 'vypnutý') : '—';
 }
 
-// Auto-start: CMEP platforma otvára publisher stránku s tokenom + Offer ID
-// (auto=1) — kamera, mikrofón a miestnosť sa spustia sami, bez ručného zadávania.
 if (qp.get('auto') === '1' && qp.get('token') && qp.get('offer')) {
-  const autoStart = () => {
-    const btn = document.querySelector('#start');
-    if (!btn) return;
-    btn.disabled = false;
-    btn.click();
-  };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(autoStart, 300));
-  else setTimeout(autoStart, 300);
+  const autoStart = () => { const btn = document.querySelector('#start'); if (!btn) return; btn.disabled = false; btn.click(); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(autoStart, 300)); else setTimeout(autoStart, 300);
 }
 
 async function listDevices() {
@@ -54,8 +75,8 @@ async function listDevices() {
     if (d.kind === 'audioinput') micSel.add(new Option(d.label || `Mikrofón ${micSel.length + 1}`, d.deviceId));
   }
 }
-
 async function openStream() {
+  if (stream && stream.getTracks().some(t => t.readyState === 'live')) return stream;
   const constraints = {
     audio: micSel.value ? { deviceId: { exact: micSel.value } } : true,
     video: { deviceId: camSel.value ? { exact: camSel.value } : true, width: { ideal: 640 }, height: { ideal: 480 } },
@@ -69,37 +90,156 @@ async function openStream() {
   document.querySelector('#micToggle').disabled = false;
   document.querySelector('#stopPreview').disabled = false;
   refreshDeviceStates();
+  return stream;
 }
-
 function wireTransport(t, direction) {
   t.on('connect', ({ dtlsParameters }, callback, errback) => {
+    if (!rpc || !rpc.isOpen()) return errback(new Error('not_connected'));
     rpc.request('connectTransport', { transportId: t.id, dtlsParameters }).then(callback).catch(errback);
   });
   if (direction === 'send') {
     t.on('produce', ({ kind, rtpParameters }, callback, errback) => {
+      if (!rpc || !rpc.isOpen()) return errback(new Error('not_connected'));
       rpc.request('produce', { transportId: t.id, kind, rtpParameters }).then(r => callback({ id: r.producerId })).catch(errback);
     });
   }
 }
-
 async function consumeFrom(producerId, kind) {
-  if (!recvTransport) {
-    const params = await rpc.request('createWebRtcTransport', { roomId, direction: 'recv' });
-    recvTransport = device.createRecvTransport(params);
-    wireTransport(recvTransport, 'recv');
+  if (!rpc || !rpc.isOpen() || !device) return;
+  if (consumedProducerIds.has(producerId)) return;
+  consumedProducerIds.add(producerId);
+  try {
+    if (!recvTransport) {
+      const params = await rpc.request('createWebRtcTransport', { roomId, direction: 'recv' });
+      recvTransport = device.createRecvTransport({ ...params, iceServers: params.iceServers || [] });
+      wireTransport(recvTransport, 'recv');
+      wireConnectionState(recvTransport, 'recv');
+    }
+    const data = await rpc.request('consume', { producerId, rtpCapabilities: device.rtpCapabilities });
+    const consumer = await recvTransport.consume({ id: data.consumerId, producerId: data.producerId, kind: data.kind, rtpParameters: data.rtpParameters });
+    await rpc.request('resumeConsumer', { consumerId: consumer.id });
+    knownConsumers.set(consumer.id, { producerId, kind });
+    if (kind === 'video') videoEl.srcObject = new MediaStream([consumer.track]);
+    else { const audioEl = document.querySelector('#remoteAudio'); audioEl.srcObject = new MediaStream([consumer.track]); }
+    say(`Prijímaný ${kind} od kupujúceho.`);
+  } catch (e) {
+    consumedProducerIds.delete(producerId);
+    if (!reconnecting) say(`Chyba príjmu ${kind}: ${e.message}`);
   }
-  const data = await rpc.request('consume', { producerId, rtpCapabilities: device.rtpCapabilities });
-  const consumer = await recvTransport.consume({
-    id: data.consumerId, producerId: data.producerId, kind: data.kind, rtpParameters: data.rtpParameters,
-  });
-  await rpc.request('resumeConsumer', { consumerId: consumer.id });
-  if (kind === 'video') {
-    videoEl.srcObject = new MediaStream([consumer.track]);
-  } else {
-    const audioEl = document.querySelector('#remoteAudio');
-    audioEl.srcObject = new MediaStream([consumer.track]);
+}
+
+function resetMediaState(full) {
+  try { if (sendTransport) sendTransport.close(); } catch {}
+  try { if (recvTransport) recvTransport.close(); } catch {}
+  sendTransport = null; recvTransport = null; device = null; producers = [];
+  consumedProducerIds.clear(); knownConsumers.clear();
+  if (full) { roomId = null; joined = false; acceptedViewer = null; }
+}
+
+async function setupTransportsAndProduce(existingProducers = []) {
+  if (!rpc || !rpc.isOpen()) throw new Error('not_connected');
+  if (!device) {
+    const caps = await rpc.request('getRouterRtpCapabilities');
+    device = new mediasoupClient.Device();
+    await device.load({ routerRtpCapabilities: caps });
   }
-  say(`Prijímaný ${kind} od kupujúceho.`);
+  const sendParams = await rpc.request('createWebRtcTransport', { roomId, direction: 'send' });
+  sendTransport = device.createSendTransport({ ...sendParams, iceServers: sendParams.iceServers || [] });
+  wireTransport(sendTransport, 'send');
+  wireConnectionState(sendTransport, 'send');
+  await openStream();
+  producers = [];
+  const audioTrack = stream.getAudioTracks()[0];
+  const videoTrack = stream.getVideoTracks()[0];
+  if (audioTrack) producers.push(await sendTransport.produce({ track: audioTrack }));
+  if (videoTrack) producers.push(await sendTransport.produce({ track: videoTrack }));
+  for (const p of existingProducers || []) await consumeFrom(p.producerId, p.kind);
+}
+
+async function ensureConnected() {
+  if (rpc && rpc.isOpen()) return;
+  currentToken = document.querySelector('#token').value.trim();
+  currentOfferId = document.querySelector('#offer').value.trim();
+  if (!currentToken) throw new Error('Chýba token.');
+  rpc = new CmepRpcClient(`${wsUrl}?token=${encodeURIComponent(currentToken)}`);
+  rpc.onEvent = async (event, data) => {
+    if (event === 'inspectionRequested') {
+      say(`Kupujúci žiada obhliadku (${data.from}). Schváliť tlačidlom Accept.`);
+      setCall('kupujúci žiada o hovor');
+      const acceptBtn = document.querySelector('#accept');
+      if (acceptBtn) { acceptBtn.disabled = false; acceptBtn.dataset.viewer = data.from || ''; }
+    }
+    if (event === 'peerJoined' || event === 'peerRejoined') setCall('kupujúci pripojený');
+    if (event === 'peerDisconnected') setCall('kupujúci sa prepája…');
+    if (event === 'newProducer') await consumeFrom(data.producerId, data.kind);
+    if (event === 'roomClosed') { stoppedByUser = true; setCall('ukončený'); say('Obhliadka ukončená serverom.'); }
+    if (event === 'peerLeft') { setCall('kupujúci sa odpojil'); videoEl.srcObject = null; say('Kupujúci sa odpojil.'); }
+  };
+  rpc.onClose = ({ code, manual, error }) => {
+    if (manual || stoppedByUser) return;
+    if (code === 4401) { say('Session expirovala alebo bola odobratá autorizácia. Obnovte prihlásenie.'); stoppedByUser = true; return; }
+    scheduleReconnect(error || new Error('connection_closed'));
+  };
+  await rpc.connect();
+}
+
+async function tryResumeOrJoin() {
+  if (!roomId) {
+    const room = await rpc.request('createRoom', { offerId: currentOfferId });
+    if (room.shouldResume) {
+      const resumed = await rpc.request('resumeSession', { roomId: room.roomId });
+      roomId = resumed.roomId; joined = true;
+      await setupTransportsAndProduce(resumed.producers || []);
+      return;
+    }
+    roomId = room.roomId; joined = true;
+    await setupTransportsAndProduce([]);
+    return;
+  }
+  try {
+    const resumed = await rpc.request('resumeSession', { roomId });
+    roomId = resumed.roomId; joined = true;
+    await setupTransportsAndProduce(resumed.producers || []);
+  } catch (e) {
+    if (/resume_not_available|resume_expired|room_not_found|forbidden|invalid_state/.test(e.message)) {
+      throw e;
+    }
+    throw e;
+  }
+}
+
+async function scheduleReconnect(err) {
+  if (reconnecting || stoppedByUser) return;
+  reconnecting = true;
+  try {
+    // transports cannot survive WS loss; recreate after resume
+    resetMediaState(false);
+    while (!stoppedByUser && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+      reconnectAttempts += 1;
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), 10000);
+      say(`Výpadok spojenia. Pokus o obnovenie ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} o ${Math.round(delay/1000)}s…`);
+      await new Promise(r => setTimeout(r, delay));
+      if (stoppedByUser) return;
+      try {
+        // revalidate token/session by reconnecting (server closes 4401 if invalid)
+        if (rpc) try { rpc.close(); } catch {}
+        rpc = null;
+        await ensureConnected();
+        await tryResumeOrJoin();
+        reconnectAttempts = 0;
+        say(`Obhliadka ${roomId} obnovená.`);
+        setCall('obnovené');
+        return;
+      } catch (e) {
+        if (/auth_failed/.test(e.message) || (e.code === 4401)) { say('Session expirovala alebo autorizácia bola odobratá.'); stoppedByUser = true; return; }
+        if (/resume_expired|resume_not_available|room_not_found|forbidden/.test(e.message)) { say(`Obnovenie nie je možné: ${e.message}`); stoppedByUser = true; return; }
+        // else retry
+      }
+    }
+    if (!stoppedByUser) { say('Obnovenie zlyhalo po viacerých pokusoch.'); stoppedByUser = true; }
+  } finally {
+    reconnecting = false;
+  }
 }
 
 document.querySelector('#preview').addEventListener('click', async () => {
@@ -114,83 +254,51 @@ document.querySelector('#stopPreview').addEventListener('click', () => {
   document.querySelector('#micToggle').disabled = true;
   say('Náhľad zastavený.');
 });
-document.querySelector('#camToggle').addEventListener('click', (e) => {
-  const t = stream?.getVideoTracks()[0]; if (!t) return;
-  t.enabled = !t.enabled; e.target.textContent = t.enabled ? 'Kamera: ON' : 'Kamera: OFF';
-  refreshDeviceStates();
-});
-document.querySelector('#micToggle').addEventListener('click', (e) => {
-  const t = stream?.getAudioTracks()[0]; if (!t) return;
-  t.enabled = !t.enabled; e.target.textContent = t.enabled ? 'Mikrofón: ON' : 'Mikrofón: OFF';
-  refreshDeviceStates();
-});
+document.querySelector('#camToggle').addEventListener('click', (e) => { const t = stream?.getVideoTracks()[0]; if (!t) return; t.enabled = !t.enabled; e.target.textContent = t.enabled ? 'Kamera: ON' : 'Kamera: OFF'; refreshDeviceStates(); });
+document.querySelector('#micToggle').addEventListener('click', (e) => { const t = stream?.getAudioTracks()[0]; if (!t) return; t.enabled = !t.enabled; e.target.textContent = t.enabled ? 'Mikrofón: ON' : 'Mikrofón: OFF'; refreshDeviceStates(); });
 
 document.querySelector('#start').addEventListener('click', async () => {
   try {
-    const token = document.querySelector('#token').value.trim();
-    const offerId = document.querySelector('#offer').value.trim();
-    if (!token || !offerId) { say('Zadaj token aj Offer ID.'); return; }
-    if (!stream) await openStream();
+    stoppedByUser = false; reconnectAttempts = 0; creating = true;
+    currentToken = document.querySelector('#token').value.trim();
+    currentOfferId = document.querySelector('#offer').value.trim();
+    if (!currentToken || !currentOfferId) { say('Zadaj token aj Offer ID.'); return; }
+    await openStream();
     say('Pripájam WS…');
-    rpc = new CmepRpcClient(`${wsUrl}?token=${encodeURIComponent(token)}`);
-    await rpc.connect();
-    rpc.onEvent = async (event, data) => {
-      if (event === 'inspectionRequested') {
-        say(`Kupujúci žiada obhliadku (${data.from}). Schváliť tlačidlom Accept.`);
-        setCall('kupujúci žiada o hovor');
-        const acceptBtn = document.querySelector('#accept');
-        if (acceptBtn) { acceptBtn.disabled = false; acceptBtn.dataset.viewer = data.from || ''; }
-      }
-      if (event === 'peerJoined') setCall('kupujúci pripojený');
-      if (event === 'newProducer') await consumeFrom(data.producerId, data.kind);
-      if (event === 'roomClosed') { setCall('ukončený'); say('Obhliadka ukončená serverom.'); }
-      if (event === 'peerLeft') { setCall('kupujúci sa odpojil'); videoEl.srcObject = null; say('Kupujúci sa odpojil.'); }
-    };
-    say('Vytváram obhliadku…');
-    const room = await rpc.request('createRoom', { offerId });
-    roomId = room.roomId;
-    say('Načítavam router capabilities…');
-    const caps = await rpc.request('getRouterRtpCapabilities');
-    device = new mediasoupClient.Device();
-    await device.load({ routerRtpCapabilities: caps });
-    const params = await rpc.request('createWebRtcTransport', { roomId, direction: 'send' });
-    sendTransport = device.createSendTransport(params);
-    wireTransport(sendTransport, 'send');
-    wireConnectionState(sendTransport);
-    setCall('čaká sa na kupujúceho');
-    say('Publikujem audio+video…');
-    const audioTrack = stream.getAudioTracks()[0];
-    const videoTrack = stream.getVideoTracks()[0];
-    if (audioTrack) producers.push(await sendTransport.produce({ track: audioTrack }));
-    if (videoTrack) producers.push(await sendTransport.produce({ track: videoTrack }));
+    await ensureConnected();
+    say('Vytváram/obnovujem obhliadku…');
+    await tryResumeOrJoin();
     document.querySelector('#stop').disabled = false;
     document.querySelector('#start').disabled = true;
-    say(`Obhliadka ${roomId} aktívna (state: ${room.state}). Čakám na žiadosť kupujúceho.`);
+    say(`Obhliadka ${roomId} aktívna. Čakám na žiadosť kupujúceho.`);
   } catch (e) { say(`Chyba: ${e.message}`); }
+  finally { creating = false; }
 });
 
-// Schválenie žiadosti viewera (acceptInspection) — security gate, ostáva manuálny
-// klik publishera; Viewer sub prichádza z push eventu (server-side identita).
 document.querySelector('#accept').addEventListener('click', async (e) => {
   try {
     const viewer = e.target.dataset.viewer || '';
     if (!viewer) { say('Nie je čo schváliť — čakám na žiadosť kupujúceho.'); return; }
     await rpc.request('acceptInspection', { roomId, viewer });
+    acceptedViewer = viewer;
     e.target.disabled = true;
     say(`Obhliadka schválená pre ${viewer}.`);
   } catch (err) { say(`Chyba: ${err.message}`); }
 });
 
 document.querySelector('#stop').addEventListener('click', async () => {
+  stoppedByUser = true;
   try {
-    if (roomId) { try { await rpc.request('close', { scope: 'room' }); } catch {} }
+    if (roomId && rpc && rpc.isOpen()) { try { await rpc.request('close', { scope: 'room' }); } catch {} }
     if (rpc) rpc.close();
   } finally {
     producers.forEach(p => { try { p.close(); } catch {} }); producers = [];
+    resetMediaState(true);
     if (stream) stream.getTracks().forEach(t => t.stop());
-    stream = null; videoEl.srcObject = null; sendTransport = null; recvTransport = null; device = null; roomId = null;
+    stream = null; videoEl.srcObject = null;
     setConn('—'); setCall('neaktívny'); refreshDeviceStates();
     document.querySelector('#stop').disabled = true;
+    document.querySelector('#start').disabled = false;
     say('Ukončené.');
   }
 });

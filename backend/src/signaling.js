@@ -29,11 +29,14 @@ async function createSignaling({
   rateLimit = { limit: 30, windowMs: 5000 },
   events,
   recorder = null,
+  turnService = null,
 }) {
   const worker = await mediasoup.createWorker({ logLevel: 'warn' });
   const router = await worker.createRouter({ mediaCodecs });
   const rooms = new SessionStore();
   const peers = new Set();
+  const resumable = new Map(); // key: `${roomId}:${sub}` -> snapshot
+  const RESUME_GRACE_MS = 30000;
   const makeLimiter = createRateLimiter(rateLimit);
   const wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
 
@@ -44,7 +47,19 @@ async function createSignaling({
   function roomPeersExcept(room, sub) {
     return [...room.participants.values()].filter(p => p.sub !== sub);
   }
+  function clearResume(roomId, sub) {
+    const key = `${roomId}:${sub}`;
+    const snap = resumable.get(key);
+    if (snap && snap.timer) clearTimeout(snap.timer);
+    resumable.delete(key);
+  }
+  function clearRoomResumes(roomId) {
+    for (const [k, snap] of resumable) {
+      if (k.startsWith(`${roomId}:`)) { if (snap.timer) clearTimeout(snap.timer); resumable.delete(k); }
+    }
+  }
   function closeRoom(room, reason) {
+    clearRoomResumes(room.id);
     for (const peer of room.participants.values()) {
       for (const entry of peer.transports.values()) { try { entry.transport.close(); } catch {} }
       peer.transports.clear(); peer.producers.clear(); peer.consumers.clear(); peer.roomId = null;
@@ -58,22 +73,60 @@ async function createSignaling({
     events.emit(adapter, { type: 'inspection_ended', roomId: room.id, offerId: room.offerId, reason: reason || 'closed' });
     log.info('room closed', { roomId: room.id, reason });
   }
-  function cleanupPeer(peer, code) {
+  function teardownPeerMedia(peer, room) {
+    if (!room) return;
+    for (const [producerId, meta] of room.producers) {
+      if (meta.ownerSub === peer.sub) room.producers.delete(producerId);
+    }
+    for (const entry of peer.transports.values()) { try { entry.transport.close(); } catch {} }
+    peer.transports.clear(); peer.producers.clear(); peer.consumers.clear();
+  }
+  function finalizePeerDeparture(peer, room, reason, opts = {}) {
+    if (!room) return;
+    teardownPeerMedia(peer, room);
+    room.participants.delete(peer.sub);
+    events.emit(adapter, { type: 'participant_left', roomId: room.id, offerId: room.offerId, actorSub: peer.sub, role: peer.role, reason });
+    for (const other of roomPeersExcept(room, peer.sub)) notifyPeer(other, 'peerLeft', { sub: peer.sub });
+    if (peer.sub === room.ownerId) closeRoom(room, opts.ownerReason || 'owner_left');
+    else if (room.participants.size === 0 && resumableCountForRoom(room.id) === 0) closeRoom(room, 'empty');
+    else if (room.participants.size === 1 && room.state === 'live') room.state = 'accepted';
+  }
+  function resumableCountForRoom(roomId) {
+    let n = 0;
+    for (const k of resumable.keys()) if (k.startsWith(`${roomId}:`)) n += 1;
+    return n;
+  }
+  function cleanupPeer(peer, code, opts = {}) {
     peers.delete(peer);
     const room = peer.roomId ? rooms.get(peer.roomId) : null;
-    if (room) {
-      for (const [producerId, meta] of room.producers) {
-        if (meta.ownerSub === peer.sub) room.producers.delete(producerId);
-      }
-      for (const entry of peer.transports.values()) { try { entry.transport.close(); } catch {} }
-      peer.transports.clear(); peer.producers.clear(); peer.consumers.clear();
+    if (!room) return;
+    const isDisconnect = code === 1006 || code === 1001 || code === undefined || opts.disconnect === true;
+    const explicitLeave = code === 1000 && opts.disconnect !== true;
+    if (isDisconnect && !explicitLeave && room.state !== 'closed') {
+      // park resumable slot: server-side transports/producers are torn down (cannot survive WS loss safely),
+      // but participant slot is reserved for bounded resume with re-auth.
+      const key = `${room.id}:${peer.sub}`;
+      const prev = resumable.get(key);
+      if (prev && prev.timer) clearTimeout(prev.timer);
+      teardownPeerMedia(peer, room);
       room.participants.delete(peer.sub);
-      events.emit(adapter, { type: 'participant_left', roomId: room.id, offerId: room.offerId, actorSub: peer.sub, role: peer.role, reason: code === undefined ? 'disconnect' : 'leave' });
-      for (const other of roomPeersExcept(room, peer.sub)) notifyPeer(other, 'peerLeft', { sub: peer.sub });
-      if (peer.sub === room.ownerId) closeRoom(room, 'owner_left');
-      else if (room.participants.size === 0) closeRoom(room, 'empty');
-      else if (room.participants.size === 1 && room.state === 'live') room.state = 'accepted';
+      for (const other of roomPeersExcept(room, peer.sub)) notifyPeer(other, 'peerDisconnected', { sub: peer.sub, resumableUntil: Date.now() + RESUME_GRACE_MS });
+      events.emit(adapter, { type: 'participant_left', roomId: room.id, offerId: room.offerId, actorSub: peer.sub, role: peer.role, reason: 'disconnect_resumable' });
+      const timer = setTimeout(() => {
+        resumable.delete(key);
+        const r = rooms.get(room.id);
+        if (!r) return;
+        events.emit(adapter, { type: 'participant_left', roomId: r.id, offerId: r.offerId, actorSub: peer.sub, role: peer.role, reason: 'resume_timeout' });
+        if (peer.sub === r.ownerId) closeRoom(r, 'owner_resume_timeout');
+        else if (r.participants.size === 0 && resumableCountForRoom(r.id) === 0) closeRoom(r, 'empty');
+        else if (r.participants.size === 1 && r.state === 'live') r.state = 'accepted';
+      }, RESUME_GRACE_MS);
+      resumable.set(key, { roomId: room.id, sub: peer.sub, role: peer.role, owner: peer.sub === room.ownerId, acceptedViewer: room.acceptedViewer, expiresAt: Date.now() + RESUME_GRACE_MS, timer });
+      if (room.participants.size === 1 && room.state === 'live') room.state = 'accepted';
+      log.info('peer parked for resume', { roomId: room.id, sub: peer.sub, role: peer.role, graceMs: RESUME_GRACE_MS });
+      return;
     }
+    finalizePeerDeparture(peer, room, explicitLeave ? 'leave' : 'disconnect', { ownerReason: 'owner_left' });
   }
 
   server.on('upgrade', (req, socket, head) => {
@@ -117,14 +170,61 @@ async function createSignaling({
     ws.on('error', () => { try { ws.close(); } catch {} });
 
     async function handle(peer, msg, claims) {
-      const room = peer.roomId ? rooms.get(peer.roomId) : null;
+      let room = peer.roomId ? rooms.get(peer.roomId) : null;
       switch (msg.method) {
         case 'getRouterRtpCapabilities':
           return router.rtpCapabilities;
+        case 'resumeSession': {
+          if (room) throw new Error('already_in_room');
+          const roomId = String(msg.data?.roomId || '');
+          const key = `${roomId}:${peer.sub}`;
+          const snap = resumable.get(key);
+          if (!snap) throw new Error('resume_not_available');
+          if (snap.expiresAt < Date.now()) { if (snap.timer) clearTimeout(snap.timer); resumable.delete(key); throw new Error('resume_expired'); }
+          const target = rooms.get(roomId);
+          if (!target || target.state === 'closed') { if (snap.timer) clearTimeout(snap.timer); resumable.delete(key); throw new Error('room_not_found'); }
+          // Re-validate authorization with fresh claims
+          let allowed = false;
+          if (snap.role === 'publisher' && target.ownerId === peer.sub) {
+            allowed = await adapter.canCreateInspection(claims, target.offerId);
+          } else if (snap.role === 'viewer') {
+            allowed = await adapter.canJoinInspection(claims, target);
+          }
+          if (!allowed) { if (snap.timer) clearTimeout(snap.timer); resumable.delete(key); throw new Error('forbidden'); }
+          if (target.participants.has(peer.sub)) { if (snap.timer) clearTimeout(snap.timer); resumable.delete(key); throw new Error('already_joined'); }
+          // For viewer, ensure still accepted viewer and room in resumable state
+          if (snap.role === 'viewer') {
+            if (target.acceptedViewer !== peer.sub) { if (snap.timer) clearTimeout(snap.timer); resumable.delete(key); throw new Error('forbidden'); }
+            if (target.state !== 'accepted' && target.state !== 'live') throw new Error('invalid_state');
+          }
+          if (snap.timer) clearTimeout(snap.timer);
+          resumable.delete(key);
+          peer.role = snap.role;
+          peer.roomId = target.id;
+          target.participants.set(peer.sub, peer);
+          if (snap.role === 'viewer' && target.state === 'accepted') target.state = 'live';
+          events.emit(adapter, { type: 'participant_joined', roomId: target.id, offerId: target.offerId, actorSub: peer.sub, role: peer.role, reason: 'resume' });
+          for (const other of roomPeersExcept(target, peer.sub)) notifyPeer(other, 'peerRejoined', { sub: peer.sub, role: peer.role });
+          const producerList = [...target.producers.values()].map(m => ({ producerId: m.producer.id, kind: m.kind, from: m.ownerSub }));
+          log.info('peer resumed session', { roomId: target.id, sub: peer.sub, role: peer.role });
+          return { roomId: target.id, state: target.state, role: peer.role, producers: producerList, resumed: true, recreateTransports: true };
+        }
+        case 'getIceServers': {
+          if (!turnService || !turnService.isEnabled()) return { iceServers: [], ttlSeconds: 0, expiresAt: 0 };
+          const issued = turnService.issueForUser(peer.sub);
+          return { iceServers: issued.iceServers, ttlSeconds: issued.ttlSeconds, expiresAt: issued.expiresAt };
+        }
         case 'createRoom': {
           if (room) throw new Error('already_in_room');
           const offerId = String(msg.data?.offerId || '');
           if (!(await adapter.canCreateInspection(claims, offerId))) throw new Error('forbidden');
+          // if owner has resumable room for same offer, instruct resume
+          for (const [k, snap] of resumable) {
+            if (snap.sub === peer.sub && snap.role === 'publisher') {
+              const r = rooms.get(snap.roomId);
+              if (r && r.offerId === offerId) return { roomId: r.id, state: r.state, role: 'publisher', shouldResume: true };
+            }
+          }
           if (rooms.size() >= 10) throw new Error('too_many_rooms');
           const newRoom = rooms.create({ ownerId: claims.sub, offerId });
           newRoom.state = 'pending';
@@ -138,8 +238,12 @@ async function createSignaling({
         }
         case 'joinRoom': {
           if (room) throw new Error('already_in_room');
-          const target = rooms.get(String(msg.data?.roomId || ''));
+          const targetId = String(msg.data?.roomId || '');
+          const target = rooms.get(targetId);
           if (!target) throw new Error('room_not_found');
+          // resumable slot shortcut
+          const snap = resumable.get(`${target.id}:${claims.sub}`);
+          if (snap) return { roomId: target.id, state: target.state, role: snap.role, shouldResume: true };
           const isOwnerJoin = target.ownerId === claims.sub;
           if (!isOwnerJoin && target.state === 'pending') throw new Error('inspection_not_accepted');
           if (!isOwnerJoin && (target.state === 'accepted' || target.state === 'live') && target.acceptedViewer !== claims.sub) throw new Error('room_full');
@@ -163,7 +267,9 @@ async function createSignaling({
         }
         case 'leaveRoom': {
           if (!room) return { ok: true };
+          clearResume(room.id, peer.sub);
           cleanupPeer(peer, 1000);
+          peer.roomId = null; peer.role = null;
           return { ok: true };
         }
         case 'requestInspection': {
@@ -215,12 +321,22 @@ async function createSignaling({
           });
           peer.transports.set(transport.id, { transport, direction });
           transport.observer.on('close', () => peer.transports.delete(transport.id));
+          const ice = (turnService && turnService.isEnabled()) ? turnService.issueForUser(peer.sub) : null;
           return {
             id: transport.id, direction,
             iceParameters: transport.iceParameters,
             iceCandidates: transport.iceCandidates,
             dtlsParameters: transport.dtlsParameters,
+            iceServers: ice ? ice.iceServers : [],
+            iceServersExpiresAt: ice ? ice.expiresAt : 0,
           };
+        }
+        case 'restartIce': {
+          if (!room) throw new Error('not_in_room');
+          const entry = peer.transports.get(String(msg.data?.transportId || ''));
+          if (!entry || entry.transport.closed) throw new Error('transport_not_found');
+          const iceParameters = await entry.transport.restartIce();
+          return { transportId: entry.transport.id, iceParameters };
         }
         case 'connectTransport': {
           if (!room) throw new Error('not_in_room');
@@ -237,6 +353,14 @@ async function createSignaling({
           const kind = msg.data?.kind;
           if (kind !== 'audio' && kind !== 'video') throw new Error('invalid_kind');
           if (peer.role === 'viewer' && kind === 'video') throw new Error('viewer_video_forbidden');
+          // prevent duplicate producers by kind for same peer (reconnect/retry safety)
+          for (const [pid, existing] of [...peer.producers.entries()]) {
+            if (existing && !existing.closed && existing.kind === kind) {
+              try { existing.close(); } catch {}
+              peer.producers.delete(pid);
+              room.producers.delete(pid);
+            }
+          }
           const producer = await entry.transport.produce({ kind, rtpParameters: msg.data?.rtpParameters, appData: { sub: peer.sub } });
           peer.producers.set(producer.id, producer);
           room.producers.set(producer.id, { producer, ownerSub: peer.sub, kind });
@@ -247,9 +371,18 @@ async function createSignaling({
         }
         case 'consume': {
           if (!room) throw new Error('not_in_room');
-          const meta = room.producers.get(String(msg.data?.producerId || ''));
+          const producerId = String(msg.data?.producerId || '');
+          const meta = room.producers.get(producerId);
           if (!meta || meta.producer.closed) throw new Error('producer_not_found');
           if (meta.ownerSub === peer.sub) throw new Error('cannot_consume_own_producer');
+          // dedupe: reuse existing consumer for same producer on this peer
+          for (const c of peer.consumers.values()) {
+            try {
+              if (!c.closed && c.producerId === meta.producer.id) {
+                return { consumerId: c.id, producerId: meta.producer.id, kind: c.kind, rtpParameters: c.rtpParameters, type: c.type, existing: true };
+              }
+            } catch {}
+          }
           const recvEntry = [...peer.transports.values()].find(e => e.direction === 'recv' && !e.transport.closed);
           if (!recvEntry) throw new Error('recv_transport_not_found');
           if (!router.canConsume({ producerId: meta.producer.id, rtpCapabilities: msg.data?.rtpCapabilities })) throw new Error('cannot_consume');

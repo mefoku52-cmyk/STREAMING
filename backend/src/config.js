@@ -42,6 +42,11 @@ function loadConfig() {
     cmepPlatformUrl: process.env.CMEP_PLATFORM_URL || '',
     cmepInternalKey: process.env.CMEP_INTERNAL_API_KEY || '',
     staticEnabled: process.env.ENABLE_STATIC_SERVE !== '0',
+    // TURN REST credentials (server-side only; TURN_SECRET never leaves server)
+    turnSecret: process.env.TURN_SECRET || '',
+    turnUrls: process.env.TURN_URLS || '',
+    turnStunUrls: process.env.TURN_STUN_URLS || '',
+    turnCredentialTtlSeconds: positiveInt('TURN_CREDENTIAL_TTL_SECONDS', 600),
   });
 }
 module.exports = { loadConfig };
