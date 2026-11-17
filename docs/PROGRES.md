@@ -11,4 +11,6 @@
 | 1 | 1.7 | hotovo | 6325b68 | 2026-11-17 | Git forenza |
 | 1 | 1.8 | hotovo | a43b5b9 | 2026-11-17 | Závislosti a bezpečnostný audit |
 | 1 | 1.9 | hotovo | a5cf4ae | 2026-11-17 | Behový stav |
-| 1 | 1.10 | hotovo | pending | 2026-11-17 | Záver FÁZY 1 |
+| 1 | 1.10 | hotovo | 4491e03 | 2026-11-17 | Záver FÁZY 1 |
+| 2 | 2.1 | hotovo | 8270a2c | 2026-11-17 | Identifikácia kandidátov na čistenie |
+| 2 | 2.2 | hotovo | 62f5db5 | 2026-11-17 | Archivácia dočasných PHASE3F artefaktov |
