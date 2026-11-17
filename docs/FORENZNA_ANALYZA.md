@@ -1999,3 +1999,9 @@ Presunuté do `attic/` (mimo git, ignorované):
 - `createRoom` (offerId smoke-offer) vrátil state `pending`.
 - Viewer `requestInspection` + owner `acceptInspection` + viewer `joinRoom` vrátil state `live` a rovnaké roomId.
 - Výsledok: WS_SMOKE_PASS.
+
+## FÁZA 3.4 - Recorder test
+
+- Browser E2E preukázal recorder: súbor FLV vznikol, veľkosť 0 B -> 262144 B, `ffprobe` hlási ~702 audio packets a codecy h264+aac.
+- Nový recording z testu: `recordings/10b62f98-2c44-4f7e-95c6-132a150f1ee9-rec-mwkww67j-1.flv` (908772 B).
+- Termux bez prehliadača: recorder je nepriamo testovateľný cez mediasoup plain transport + FFmpeg; plný E2E vyžaduje fake media z prehliadača, preto je dôkaz z browser testu akceptovaný.
