@@ -15,6 +15,14 @@
 | 2 | 2.5 | hotovo | 215f115 | 2026-11-17 | Stavový automat |
 | 2 | 2.6 | hotovo | 215f115 | 2026-11-17 | Rozhodnutia |
 | 2 | 2.7 | hotovo | 215f115 | 2026-11-17 | Záver FÁZY 2 |
+| 3 | 3.1 | hotovo | 38acfc2 | 2026-11-17 | Stavový automat modul |
+| 3 | 3.2 | hotovo | 38acfc2 | 2026-11-17 | Endpointy (existujúce) |
+| 3 | 3.3 | hotovo | 38acfc2 | 2026-11-17 | Idempotencia (tlačidlá) |
+| 3 | 3.4 | hotovo | 38acfc2 | 2026-11-17 | Tlačidlá web |
+| 3 | 3.5 | hotovo | 38acfc2 | 2026-11-17 | Stavy tlačidiel |
+| 3 | 3.6 | hotovo | 38acfc2 | 2026-11-17 | Viewer stavy |
+| 3 | 3.7 | hotovo | 38acfc2 | 2026-11-17 | Bez placeholderov |
+| 3 | 3.8 | hotovo | 38acfc2 | 2026-11-17 | Testy (51 PASS) |
 | 1 | 1.1 | hotovo | 89b83ee | 2026-11-17 | npm ls ws + backup lock |
 | 1 | 1.2 | hotovo | 89b83ee | 2026-11-17 | Závislosti ws |
 | 1 | 1.3 | hotovo | 89b83ee | 2026-11-17 | ws@8.21.0 |
