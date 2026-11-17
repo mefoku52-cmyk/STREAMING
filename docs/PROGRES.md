@@ -48,3 +48,7 @@
 | 8 | 8.2 | hotovo | 608fef1 | 2026-11-17 | TURN setup docs |
 | 8 | 8.3 | hotovo | 608fef1 | 2026-11-17 | README aktualizácia |
 | 8 | 8.4 | hotovo | 608fef1 | 2026-11-17 | Záver FÁZY 8 |
+| 9 | 9.1 | hotovo | b4d135d | 2026-11-17 | docker-compose.yml |
+| 9 | 9.2 | hotovo | b4d135d | 2026-11-17 | Lokálny produkčný štart |
+| 9 | 9.3 | hotovo | b4d135d | 2026-11-17 | Smoke test proti production profilu |
+| 9 | 9.4 | hotovo | b4d135d | 2026-11-17 | Záver FÁZY 9 |
