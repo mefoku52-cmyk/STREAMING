@@ -64,3 +64,7 @@ a652c5a docs: add backend forensic analysis (phase 1.3)
 
 ## Kontrola tajomstiev
 - git log --all --name-only neobsahuje .env, .pem ani .key súbory.
+
+## Nález: event_record_failed
+- Pri vypadku DB sa udalosť iba loguje a stráca bez chyby pre používateľa.
+- Riziko straty záznamu.
