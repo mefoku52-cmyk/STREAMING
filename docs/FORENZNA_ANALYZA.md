@@ -2005,3 +2005,11 @@ Presunuté do `attic/` (mimo git, ignorované):
 - Browser E2E preukázal recorder: súbor FLV vznikol, veľkosť 0 B -> 262144 B, `ffprobe` hlási ~702 audio packets a codecy h264+aac.
 - Nový recording z testu: `recordings/10b62f98-2c44-4f7e-95c6-132a150f1ee9-rec-mwkww67j-1.flv` (908772 B).
 - Termux bez prehliadača: recorder je nepriamo testovateľný cez mediasoup plain transport + FFmpeg; plný E2E vyžaduje fake media z prehliadača, preto je dôkaz z browser testu akceptovaný.
+
+## FÁZA 3.5 - Výkonnostný základ
+
+- 10 súbežných WebSocket pripojení na lokálny server: všetky úspešné.
+- Connect latency: min 5.12 ms, avg 16.22 ms, max 95.86 ms.
+- RPC `getRouterRtpCapabilities`: min 1.58 ms, avg 2.55 ms, max 8.86 ms.
+- Server RSS: pred 15.66 MB, po 18.20 MB, delta 2.54 MB.
+- Prostredie: Termux/Android, Node v24, mediasoup worker aktívny, recorder vypnutý v tomto behu.
