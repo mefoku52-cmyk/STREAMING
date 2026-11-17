@@ -1975,3 +1975,11 @@ Presunuté do `attic/` (mimo git, ignorované):
 - Odstránená závislosť `mediasoup-client` z `backend/package.json` a lockfile (`npm uninstall`).
 - Dôvod: backend kód `require('mediasoup-client')` nepoužíva; frontend používa vendored `web/vendor/mediasoup-client.min.js`.
 - Overenie: `npm run check` prešiel; priame spustenie `node --test 'test/*.js'` dalo 48 PASS a 1 FAIL v `cmep-live-e2e.test.js` kvôli externému Python `cryptography` ABI (nie kvôli zmene).
+
+## FÁZA 3.1 - Znovuoverenie existujúcich testov
+
+- Backend unit/integračné testy (bez cross-service): `node --test $(ls backend/test/*.js | grep -v cmep-live-e2e)` => 48/48 PASS.
+- `backend/test/cmep-live-e2e.test.js`: 1 FAIL kvôli externému Python prostrediu (`waste-platform`, cryptography ABI / `PyBaseObject_Type`), nie kvôli zmene v tomto repozitári.
+- Browser E2E (`scripts/browser-test.sh`): 22/22 PASS, vrátane obojsmerného audio/video RTP a FFmpeg nahrávky (702 audio packets, h264+aac).
+- `npm run check` prešiel (syntax JS + Python compile).
+- Poznámka: `npm test` (`node --test test/`) zlyháva na Node v24 kvôli rozlíšeniu adresára; priame glob spustenie funguje. Produkčný cieľ je Node 20.
