@@ -1921,3 +1921,22 @@ NPM skript `check` overuje syntax JS a Python.
 ### Zistenia / riziká
 - `mediasoup-client` v backend `package.json` môže byť nepoužívaná závislosť (frontend používa vendored súbor) - overiť vo FÁZE 2.
 - `ws` zraniteľnosť je reálny bezpečnostný nález; riešiť hardeningom (upgrade alebo mitigácia).
+
+## Behový stav (FÁZA 1.9)
+
+### Server
+- `runtime/last-start.pid` obsahuje PID 6002, ale proces nebeží; `curl http://127.0.0.1:8504/health` zlyhal (`Could not connect`).
+- Posledný log: `cmep-streaming started` host `127.0.0.1`, port `8504`, `adapter: local`, `recorder: false`, pid 6002 (2026-11-12T01:02:32Z).
+- Runtime lock súbor existuje (`runtime/server.lock`, 30 B), ale server nie je aktívny (stale lock možný).
+
+### Nahrávky
+- `recordings/` obsahuje 6 FLV súborov (~5.2 MB celkom), teda recorder v minulosti vytváral súbory.
+- `.gitignore` ignoruje `recordings/`, takže nahrávky nie sú v gite.
+
+### Konfigurácia
+- `.env` existuje (1168 B); `.env.example` existuje (1598 B).
+- Produkčný profil nebol overený v tejto relácii (server beží iba v development režime podľa logov).
+
+### Zistenia
+- Aktuálny server nie je spustený; pred testami treba spustiť `scripts/start.sh`.
+- Recorder bol v minulých behoch aktívny a vytváral FLV súbory.
