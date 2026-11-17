@@ -53,3 +53,6 @@
 | 9 | 9.3 | hotovo | b4d135d | 2026-11-17 | Smoke test proti production profilu |
 | 9 | 9.4 | hotovo | b4d135d | 2026-11-17 | Záver FÁZY 9 |
 | 10 | 10.1 | hotovo | a59fded | 2026-11-17 | check_all.sh |
+| 10 | 10.2 | hotovo | 8c59dd4 | 2026-11-17 | REPORT_FINAL.md |
+| 10 | 10.3 | hotovo | 8c59dd4 | 2026-11-17 | Požiadavky pre nasadenie |
+| 10 | 10.4 | hotovo | pending | 2026-11-17 | Záver FÁZY 10 |
