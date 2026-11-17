@@ -1850,3 +1850,29 @@ createRoom, joinRoom, leaveRoom, getRouterRtpCapabilities, createWebRtcTransport
 - Deploy artefakty sú orientované na VPS (systemd/Caddy/coturn), nie na Render.com (FÁZA 6 upraví).
 - Coturn konfigurácia je šablóna s placeholdermi, nie pripravená na priame použitie.
 - Firewall otvára široký rozsah relay portov; je to očakávané pre coturn.
+
+## Testy (FÁZA 1.6)
+
+### Backend jednotkové/integračné testy (`backend/test/`)
+- `auth.test.js` (45 riadkov)
+- `cmep-live-e2e.test.js` (278 riadkov)
+- `config.test.js` (7 riadkov)
+- `events.test.js` (32 riadkov)
+- `http-adapter.test.js` (282 riadkov)
+- `integration.test.js` (209 riadkov)
+- `producer-dedup.test.js` (245 riadkov)
+- `protocol.test.js` (6 riadkov)
+- `session-store.test.js` (33 riadkov)
+- `signaling-resume.test.js` (186 riadkov)
+- `signaling-turn.test.js` (156 riadkov)
+- `turn-credentials.test.js` (47 riadkov)
+Spúšťanie: `cd backend && npm test` (`node --test test/`).
+
+### Browser E2E
+- `scripts/browser-test.sh` vyžaduje: `.env`, `chromium-browser`, bežiaci server na port 8504, tokeny v `runtime/tokens/`.
+- `scripts/browser-test.js` používa CDP, fake media, dokazuje owner↔viewer audio/video a cleanup.
+- Posledný report: `runtime/browser-test-last.json` (2860 B), `deploy/PHASE3B_CDP_E2E_REPORT.md` uvádza 22/22 PASS.
+
+### Zistenia
+- Testy sú prítomné a spustiteľné cez npm, ale ich skutočný stav sa overí vo FÁZE 3.
+- Browser test je prostredie-senzitívny (vyžaduje Chromium a bežiaci server).
