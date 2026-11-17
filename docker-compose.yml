@@ -1,0 +1,34 @@
+version: '3.8'
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      NODE_ENV: production
+      SIGNALING_HOST: 0.0.0.0
+      SIGNALING_PORT: "8504"
+      ENABLE_RECORDER: "0"
+    ports:
+      - "8504:8504"
+    volumes:
+      - ./runtime:/app/runtime
+      - ./recordings:/app/recordings
+    restart: unless-stopped
+
+  coturn:
+    image: coturn/coturn:latest
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+      - "5349:5349/tcp"
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile
+    restart: unless-stopped
