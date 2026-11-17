@@ -3,4 +3,12 @@
 | Fáza | Krok | Stav | Commit | Dátum | Poznámka |
 |------|------|------|--------|-------|----------|
 | 1 | 1.1 | hotovo | 6f29411 | 2026-11-17 | Založený PROGRES.md |
-| 1 | 1.2 | hotovo | pending | 2026-11-17 | Forenzný inventár v docs/FORENZNA_ANALYZA.md |
+| 1 | 1.2 | hotovo | 51af09d | 2026-11-17 | Forenzný inventár v docs/FORENZNA_ANALYZA.md |
+| 1 | 1.3 | hotovo | a652c5a | 2026-11-17 | Backend forenzná analýza |
+| 1 | 1.4 | hotovo | fac1c57 | 2026-11-17 | Frontend forenzná analýza |
+| 1 | 1.5 | hotovo | 9bdd5bf | 2026-11-17 | Deploy artefakty forenzná analýza |
+| 1 | 1.6 | hotovo | f79c088 | 2026-11-17 | Testy a browser-test analýza |
+| 1 | 1.7 | hotovo | 6325b68 | 2026-11-17 | Git forenza |
+| 1 | 1.8 | hotovo | a43b5b9 | 2026-11-17 | Závislosti a bezpečnostný audit |
+| 1 | 1.9 | hotovo | a5cf4ae | 2026-11-17 | Behový stav |
+| 1 | 1.10 | hotovo | pending | 2026-11-17 | Záver FÁZY 1 |
