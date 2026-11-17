@@ -16,4 +16,5 @@
 | 2 | 2.2 | hotovo | 62f5db5 | 2026-11-17 | Archivácia dočasných PHASE3F artefaktov |
 | 2 | 2.3 | hotovo | bdc3ff8 | 2026-11-17 | Revízia duplicitných konfigurácií |
 | 2 | 2.4 | hotovo | 8f7497e | 2026-11-17 | Odstránenie nepoužívanej závislosti mediasoup-client |
-| 2 | 2.5 | hotovo | pending | 2026-11-17 | Záver FÁZY 2 |
+| 2 | 2.5 | hotovo | bfd6ac3 | 2026-11-17 | Záver FÁZY 2 |
+| 3 | 3.1 | hotovo | e217146 | 2026-11-17 | Znovuoverenie existujúcich testov |
