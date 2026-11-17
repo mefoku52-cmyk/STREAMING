@@ -52,3 +52,4 @@
 | 9 | 9.2 | hotovo | b4d135d | 2026-11-17 | Lokálny produkčný štart |
 | 9 | 9.3 | hotovo | b4d135d | 2026-11-17 | Smoke test proti production profilu |
 | 9 | 9.4 | hotovo | b4d135d | 2026-11-17 | Záver FÁZY 9 |
+| 10 | 10.1 | hotovo | a59fded | 2026-11-17 | check_all.sh |
