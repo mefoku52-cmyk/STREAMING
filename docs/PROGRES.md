@@ -27,6 +27,13 @@
 | 4 | 4.2 | hotovo | 7275768 | 2026-11-17 | Browser tok (environment issue) |
 | 4 | 4.3 | hotovo | 7275768 | 2026-11-17 | Viac firiem (NEOVERENE) |
 | 4 | 4.4 | hotovo | 7275768 | 2026-11-17 | Plná sada testov |
+| 5 | 5.1 | hotovo | 04d0551 | 2026-11-17 | Env validacia (existuje) |
+| 5 | 5.2 | hotovo | 04d0551 | 2026-11-17 | Security headers/CORS/rate limit |
+| 5 | 5.3 | hotovo | 04d0551 | 2026-11-17 | Dockerfile |
+| 5 | 5.4 | hotovo | 04d0551 | 2026-11-17 | render.yaml UDP NEOVERENE |
+| 5 | 5.5 | hotovo | 04d0551 | 2026-11-17 | NASADENIE_VPS.md |
+| 5 | 5.6 | hotovo | 04d0551 | 2026-11-17 | PRED_NASADENIM.md |
+| 5 | 5.7 | hotovo | 04d0551 | 2026-11-17 | Záver FÁZY 5 |
 | 1 | 1.1 | hotovo | 89b83ee | 2026-11-17 | npm ls ws + backup lock |
 | 1 | 1.2 | hotovo | 89b83ee | 2026-11-17 | Závislosti ws |
 | 1 | 1.3 | hotovo | 89b83ee | 2026-11-17 | ws@8.21.0 |
