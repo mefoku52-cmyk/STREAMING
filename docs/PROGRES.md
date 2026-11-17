@@ -25,3 +25,4 @@
 | 3 | 3.6 | hotovo | 0d2efbb | 2026-11-17 | Záver FÁZY 3 + smoke_local.sh |
 | 4 | 4.1 | hotovo | 737396b | 2026-11-17 | Architektúra pre produkciu |
 | 4 | 4.2 | hotovo | daa9744 | 2026-11-17 | Rozhodnutia D1-D8 |
+| 4 | 4.3 | hotovo | b35c099 | 2026-11-17 | Návrh zmien pre produkciu |
