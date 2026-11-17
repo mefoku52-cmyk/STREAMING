@@ -66,3 +66,25 @@ Node.js (jeden proces)
 - Strukturovane JSON logy bez tajomstiev.
 - Graceful shutdown (SIGTERM/SIGINT).
 - Health checks `/health`, `/healthz`.
+
+## 6. Potrebné zmeny v kóde (návrh)
+
+### (a) Environment variables
+- Validovať povinné premenné na štarte (`SESSION_SIGNING_SECRET`, `SIGNALING_PORT`, `ANNOUNCED_IP` v produkcii).
+- Fail-fast s jasnou chybou, nie TDZ/undefined.
+
+### (b) CORS
+- Backend servíruje frontend z rovnakého originu; ak je oddelený, nastaviť explicitný CORS allowlist.
+- WebSocket origin kontrola pre `/ws`.
+
+### (c) TURN integrácia
+- `/getIceServers` už vydáva krátkodobé credentials cez `turn-credentials.js`.
+- Overiť coturn `use-auth-secret` a zhodný `TURN_SECRET`.
+
+### (d) Health checks
+- `/health` a `/healthz` už existujú; pridať readiness podmienky (worker alive, port listen).
+- Docker/Render health check endpoint.
+
+### (e) Graceful shutdown
+- Už implementované (SIGTERM/SIGINT, close rooms, stop recorder, release lock).
+- Overiť timeouty a cleanup v produkcii.
