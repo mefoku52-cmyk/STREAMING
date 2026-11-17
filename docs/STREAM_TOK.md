@@ -44,3 +44,10 @@
 - Jeden stream na obhliadku (room viazaná na offerId).
 - Stream spúšťa owner po akceptovaní viewer requestu.
 - Viewer publikuje iba audio.
+
+## Stavy toku (doplnenie)
+- stav requested: ziadost o stream od kupujuceho.
+- stav approved: predavajuci schvalil ziadost.
+- stav live: stream bezi.
+- stav ended: stream ukonceny.
+- stav failed: stream zlyhal.
