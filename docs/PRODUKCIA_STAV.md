@@ -68,3 +68,10 @@ a652c5a docs: add backend forensic analysis (phase 1.3)
 ## Nález: event_record_failed
 - Pri vypadku DB sa udalosť iba loguje a stráca bez chyby pre používateľa.
 - Riziko straty záznamu.
+
+## Test cmep-live-e2e
+- Súbor: backend/test/cmep-live-e2e.test.js
+- Čo robí: spúšťa externý Python runner waste-platform/scripts/cmep_live_inspection_e2e_server.py, seeduje DB, mintuje tokeny, spúšťa streaming server s CMEP_ADAPTER=http a overuje celý flow.
+- Vyžaduje: waste-platform repozitár, Python venv, DB, uvicorn, platný cryptography modul.
+- Dôvod nespustenia vo všeobecnom behu: v Termuxe je Python cryptography ABI nekompatibilný (PyBaseObject_Type), test zlyháva pri štarte platformy.
+- Bezpečnosť: spustenie je možné len s funkčným externým prostredím; v tejto relácii by bolo nebezpečné/márne.
