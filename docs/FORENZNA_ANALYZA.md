@@ -1876,3 +1876,23 @@ Spúšťanie: `cd backend && npm test` (`node --test test/`).
 ### Zistenia
 - Testy sú prítomné a spustiteľné cez npm, ale ich skutočný stav sa overí vo FÁZE 3.
 - Browser test je prostredie-senzitívny (vyžaduje Chromium a bežiaci server).
+
+## Git forenza (FÁZA 1.7)
+
+### História
+- Aktívna vetva: `main`, remote `origin/main`.
+- Posledné commity pred FÁZOU 1:
+  - `3083dbc` feat(streaming): harden signaling/turn/resume, fix producer dedup, add deploy artifacts and tests
+  - `3a76182` docs(evidence): report z browser E2E
+  - `4cda489` fix(streaming): stabilizácia cross-service E2E
+  - `828dbf1` feat(streaming): CMEP platform integration
+- FÁZA 1 pridala commity `6f29411` až `f79c088`.
+
+### Stav
+- Žiadne stash položky.
+- Necommitnuté/untracked súbory: `deploy/PHASE3F_*.txt`, `deploy/phase3f_runA/`, `deploy/phase3f_runB/`, `deploy/phase3f_runs/`, `tools/` (diagnostické artefakty).
+- Žiadne mŕtve vetvy; iba `main`.
+
+### Zistenia
+- Necommitnuté artefakty sú dočasné diagnostické výstupy (FÁZA 2 rozhodne o archivácii).
+- `.gitignore` existuje (109 B); overiť, či chráni `.env`, node_modules, runtime.
