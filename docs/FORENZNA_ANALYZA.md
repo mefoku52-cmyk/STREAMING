@@ -1765,3 +1765,41 @@ const say = (m) => { stateEl.textContent = m; };
 let wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.hostname + ':8504/ws';
 ```
 
+
+## Backend analýza (FÁZA 1.3)
+
+### Moduly `backend/src`
+
+| Súbor | Riadky | Účel | Závislosti |
+|---|---:|---|---|
+| index.js | 146 | Vstupný bod, runtime lock, health, interné API | config, http, signaling, adapter, media-config, process-manager, recorder, events, mediasoup, auth, turn-credentials |
+| http.js | 71 | HTTP server, statické súbory, health endpointy, interné POST | node:http, node:fs, node:path |
+| signaling.js | 473 | WebSocket signaling, mediasoup worker/router, rooms, peers, resume | ws, protocol, session-store, logger |
+| config.js | 52 | Konfigurácia env | node:path |
+| auth.js | 26 | Lokálne JWT/session tokeny | node:crypto |
+| adapter/cmep-adapter.js | 47 | Výber local/http adaptera | adapter/http-adapter |
+| adapter/http-adapter.js | 168 | CMEP platform HTTP adapter | node:crypto |
+| events.js | 28 | Audit/event emitovanie | logger |
+| logger.js | 10 | JSON logging | - |
+| media-config.js | 28 | Media/listen IP konfigurácia | - |
+| process-manager.js | 21 | Správa child procesov (ffmpeg/recorder) | node:child_process |
+| protocol.js | 15 | Validácia WS metód | - |
+| recorder.js | 159 | FFmpeg recording cez plain transport | node:fs, node:path, node:dgram |
+| session-store.js | 24 | In-memory room/peer store | node:crypto |
+| turn-credentials.js | 54 | TURN REST credentials a ICE servers | node:crypto |
+
+### HTTP endpointy
+- `GET /health`, `GET /healthz` - health payload, cache-control no-store.
+- `POST /internal/inspections/:id/end` - interné CMEP rozhranie chránené `X-CMEP-Internal-Key`.
+- `GET /*` - statické súbory z `web/` ak `staticEnabled`.
+- WebSocket upgrade iba pre `GET /ws`.
+
+### WebSocket metódy (protocol.js)
+createRoom, joinRoom, leaveRoom, getRouterRtpCapabilities, createWebRtcTransport, connectTransport, produce, consume, resumeConsumer, requestInspection, acceptInspection, rejectInspection, startRecording, stopRecording, close, getIceServers, restartIce, resumeSession.
+
+### Zistenia
+- Backend je Node.js CommonJS, závislosti iba `mediasoup`, `mediasoup-client`, `ws`.
+- NPM skript `check` kontroluje syntax JS a Python server.
+- Server má runtime lock s PID a kontrolou `/proc/<pid>/cmdline`.
+- Health endpoint môže vrátiť `ready: false` počas štartu (worker ešte neexistuje).
+- Interné API je fail-closed, ak chýba signaling.
