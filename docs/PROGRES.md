@@ -23,6 +23,10 @@
 | 3 | 3.6 | hotovo | 38acfc2 | 2026-11-17 | Viewer stavy |
 | 3 | 3.7 | hotovo | 38acfc2 | 2026-11-17 | Bez placeholderov |
 | 3 | 3.8 | hotovo | 38acfc2 | 2026-11-17 | Testy (51 PASS) |
+| 4 | 4.1 | hotovo | 7275768 | 2026-11-17 | Porty a štart |
+| 4 | 4.2 | hotovo | 7275768 | 2026-11-17 | Browser tok (environment issue) |
+| 4 | 4.3 | hotovo | 7275768 | 2026-11-17 | Viac firiem (NEOVERENE) |
+| 4 | 4.4 | hotovo | 7275768 | 2026-11-17 | Plná sada testov |
 | 1 | 1.1 | hotovo | 89b83ee | 2026-11-17 | npm ls ws + backup lock |
 | 1 | 1.2 | hotovo | 89b83ee | 2026-11-17 | Závislosti ws |
 | 1 | 1.3 | hotovo | 89b83ee | 2026-11-17 | ws@8.21.0 |
