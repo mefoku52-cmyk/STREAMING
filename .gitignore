@@ -11,3 +11,4 @@ runtime/
 recordings/
 tmp/
 __pycache__/
+attic/

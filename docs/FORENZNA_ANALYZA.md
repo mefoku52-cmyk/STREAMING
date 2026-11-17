@@ -1955,3 +1955,11 @@ NPM skript `check` overuje syntax JS a Python.
 
 ### Nepoužívané závislosti
 - `mediasoup-client` v `backend/package.json` (potvrdené grepom: žiadny `require/import` v backend).
+
+## FÁZA 2.2 - Archivácia dočasných artefaktov
+
+Presunuté do `attic/` (mimo git, ignorované):
+- `deploy/PHASE3F_*.txt`
+- `deploy/phase3f_runA/`, `deploy/phase3f_runB/`, `deploy/phase3f_runs/`
+- `tools/diag_3f_discover.sh`, `tools/diag_3f_repeat.sh`, `tools/diag_3f_window.js`
+- adresár `tools/` odstránený po presune (bol prázdny).
