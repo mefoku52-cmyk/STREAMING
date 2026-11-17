@@ -1803,3 +1803,25 @@ createRoom, joinRoom, leaveRoom, getRouterRtpCapabilities, createWebRtcTransport
 - Server má runtime lock s PID a kontrolou `/proc/<pid>/cmdline`.
 - Health endpoint môže vrátiť `ready: false` počas štartu (worker ešte neexistuje).
 - Interné API je fail-closed, ak chýba signaling.
+
+## Frontend analýza (FÁZA 1.4)
+
+### Štruktúra `web/`
+- `index.html` (1 riadok) - vstupná stránka s odkazmi na publisher/viewer.
+- `publish.html` (19 riadkov) - publisher UI: výber kamery/mikrofónu, náhľad, createRoom, accept, záznam.
+- `viewer.html` (12 riadkov) - viewer UI: token, roomId, pripojenie, mikrofón, audio.
+- `publish.js` (304 riadkov) - publisher logika, mediasoup-client Device, producents, signaling.
+- `viewer.js` (258 riadkov) - viewer logika, consume, reconnect/resume handling.
+- `rpc.js` (60 riadkov) - WebSocket RPC klient.
+- `app.css` (1 riadok) - štýly.
+- `vendor/mediasoup-client.min.js` (233546 B) - vendored mediasoup-client 3.26.0 (podľa package.json).
+
+### Technológie
+- Vanilla HTML/JS, bez build systému a bez `package.json` vo `web/`.
+- WebSocket signaling priamo na `:8504/ws`.
+- Frontend servíruje backend cez statické súbory (`webRoot`).
+
+### Zistenia
+- Žiadne framework závislosti (React/Vue/Angular).
+- `vendor` je veľký minifikovaný súbor, verzia musí byť udržiavaná manuálne.
+- `app.css` je 1 riadok, pravdepodobne minifikovaný.
