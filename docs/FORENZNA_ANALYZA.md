@@ -1896,3 +1896,28 @@ Spúšťanie: `cd backend && npm test` (`node --test test/`).
 ### Zistenia
 - Necommitnuté artefakty sú dočasné diagnostické výstupy (FÁZA 2 rozhodne o archivácii).
 - `.gitignore` existuje (109 B); overiť, či chráni `.env`, node_modules, runtime.
+
+## Závislosti a bezpečnosť (FÁZA 1.8)
+
+### Backend
+- `mediasoup@3.32.2`
+- `mediasoup-client@3.26.0`
+- `ws@8.18.0`
+NPM skript `check` overuje syntax JS a Python.
+
+### Frontend
+- Žiadny `package.json` vo `web/`.
+- Vendored `web/vendor/mediasoup-client.min.js` (233546 B).
+- WebSocket klient je natívny browser `WebSocket`.
+
+### Audit
+- `npm audit --omit=dev`: 1 high severity zraniteľnosť v `ws` (8.0.0-8.20.1), fix vyžaduje `ws@8.23.0` mimo deklarovaný rozsah (breaking/force).
+- `mediasoup` a `mediasoup-client` bez audit nálezu v tomto výpise.
+
+### .gitignore
+- Chránené: `node_modules/`, `.env`, `.env.*` (okrem `.env.example`), `*.pem`, `*.key`, `*.flv`, `*.sdp`, `logs/`, `runtime/`, `recordings/`, `tmp/`, `__pycache__/`.
+- `deploy/env/.env.production` nie je v .gitignore explicitne, ale deploy skript ho vylučuje z rsync; skontrolovať, či neexistuje commitnutý.
+
+### Zistenia / riziká
+- `mediasoup-client` v backend `package.json` môže byť nepoužívaná závislosť (frontend používa vendored súbor) - overiť vo FÁZE 2.
+- `ws` zraniteľnosť je reálny bezpečnostný nález; riešiť hardeningom (upgrade alebo mitigácia).
