@@ -19,3 +19,4 @@
 | 2 | 2.5 | hotovo | bfd6ac3 | 2026-11-17 | Záver FÁZY 2 |
 | 3 | 3.1 | hotovo | e217146 | 2026-11-17 | Znovuoverenie existujúcich testov |
 | 3 | 3.2 | hotovo | 6a6f589 | 2026-11-17 | API smoke test |
+| 3 | 3.3 | hotovo | 0071822 | 2026-11-17 | WebSocket signaling test |
