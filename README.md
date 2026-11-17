@@ -86,3 +86,9 @@ issued by the platform — no manual token/offer/room entry. See
 docs/LIVE_INSPECTIONS.md for the architecture, the identifier contract and the
 required configuration, and docs/CMEP_ADAPTER_CONTRACT.md for the adapter
 contract.
+
+## Produkcia a Render
+
+Priprava pre Render.com a vlastnu domenu je v docs/RENDER_DEPLOY.md,
+docs/ARCHITEKTURA.md a docs/ROZHODNUTIA.md. Dockerfile je v backend/Dockerfile.
+TURN setup je v docs/TURN_SETUP.md. Runbook je v docs/RUNBOOK.md.
