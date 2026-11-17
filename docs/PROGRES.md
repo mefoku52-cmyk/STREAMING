@@ -18,3 +18,4 @@
 | 2 | 2.4 | hotovo | 8f7497e | 2026-11-17 | Odstránenie nepoužívanej závislosti mediasoup-client |
 | 2 | 2.5 | hotovo | bfd6ac3 | 2026-11-17 | Záver FÁZY 2 |
 | 3 | 3.1 | hotovo | e217146 | 2026-11-17 | Znovuoverenie existujúcich testov |
+| 3 | 3.2 | hotovo | 6a6f589 | 2026-11-17 | API smoke test |
