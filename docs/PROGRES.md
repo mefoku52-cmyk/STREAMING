@@ -21,3 +21,4 @@
 | 3 | 3.2 | hotovo | 6a6f589 | 2026-11-17 | API smoke test |
 | 3 | 3.3 | hotovo | 0071822 | 2026-11-17 | WebSocket signaling test |
 | 3 | 3.4 | hotovo | 493a912 | 2026-11-17 | Recorder test |
+| 3 | 3.5 | hotovo | 787eaa6 | 2026-11-17 | Výkonnostný základ |
