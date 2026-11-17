@@ -2,6 +2,12 @@
 
 | Fáza | Krok | Stav | Commit | Dátum | Poznámka |
 |------|------|------|--------|-------|----------|
+| 0 | 0.1 | hotovo | fe2550a | 2026-11-17 | Audit fáz 1-10 |
+| 0 | 0.2 | hotovo | bcb796b | 2026-11-17 | Commit check_streaming.sh |
+| 0 | 0.3 | hotovo | fe2550a | 2026-11-17 | check_all.sh (48/48 PASS, exit 0) |
+| 0 | 0.4 | hotovo | fe2550a | 2026-11-17 | Zoznam nepushnutých commitov |
+| 0 | 0.5 | hotovo | fe2550a | 2026-11-17 | Kontrola tajomstiev (žiadne) |
+| 0 | 0.6 | hotovo | fe2550a | 2026-11-17 | Záver FÁZY 0 |
 | 1 | 1.1 | hotovo | 6f29411 | 2026-11-17 | Založený PROGRES.md |
 | 1 | 1.2 | hotovo | 51af09d | 2026-11-17 | Forenzný inventár v docs/FORENZNA_ANALYZA.md |
 | 1 | 1.3 | hotovo | a652c5a | 2026-11-17 | Backend forenzná analýza |
