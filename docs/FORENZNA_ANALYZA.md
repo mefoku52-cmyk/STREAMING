@@ -1963,3 +1963,9 @@ Presunuté do `attic/` (mimo git, ignorované):
 - `deploy/phase3f_runA/`, `deploy/phase3f_runB/`, `deploy/phase3f_runs/`
 - `tools/diag_3f_discover.sh`, `tools/diag_3f_repeat.sh`, `tools/diag_3f_window.js`
 - adresár `tools/` odstránený po presune (bol prázdny).
+
+## FÁZA 2.3 - Duplicitné konfigurácie
+
+- `.env` (lokálny, gitignored) a `deploy/env/.env.production.template` (produkčná šablóna) majú rozdielny účel; neboli zlúčené.
+- `config/ports.example.json` je ilustratívny a nie je načítavaný kódom; ponechaný ako dokumentácia.
+- Žiadna zmena kódu; zdroje pravdy zostávajú oddelené pre dev vs production.
