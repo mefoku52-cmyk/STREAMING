@@ -302,3 +302,6 @@ document.querySelector('#stop').addEventListener('click', async () => {
     say('Ukončené.');
   }
 });
+
+const __startStreamBtn = document.querySelector('#startStream');
+if (__startStreamBtn) __startStreamBtn.addEventListener('click', () => { const b = document.querySelector('#start'); if (b) b.click(); });

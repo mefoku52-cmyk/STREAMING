@@ -256,3 +256,6 @@ document.querySelector('#stop').addEventListener('click', () => {
   document.querySelector('#micToggle').disabled = true;
   say('Odpojené.');
 });
+
+const __requestStreamBtn = document.querySelector('#requestStream');
+if (__requestStreamBtn) __requestStreamBtn.addEventListener('click', () => { __requestStreamBtn.disabled = true; const b = document.querySelector('#connect'); if (b) b.click(); setTimeout(() => { __requestStreamBtn.disabled = false; }, 2000); });
