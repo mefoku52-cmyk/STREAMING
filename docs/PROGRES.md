@@ -34,6 +34,10 @@
 | 5 | 5.5 | hotovo | 04d0551 | 2026-11-17 | NASADENIE_VPS.md |
 | 5 | 5.6 | hotovo | 04d0551 | 2026-11-17 | PRED_NASADENIM.md |
 | 5 | 5.7 | hotovo | 04d0551 | 2026-11-17 | Záver FÁZY 5 |
+| 6 | 6.1 | hotovo | fe3932b | 2026-11-17 | check_all + cmep_check |
+| 6 | 6.2 | hotovo | fe3932b | 2026-11-17 | REPORT_DOPLNENIE.md |
+| 6 | 6.3 | hotovo | fe3932b | 2026-11-17 | Commit report |
+| 6 | 6.4 | hotovo | fe3932b | 2026-11-17 | Záver FÁZY 6 |
 | 1 | 1.1 | hotovo | 89b83ee | 2026-11-17 | npm ls ws + backup lock |
 | 1 | 1.2 | hotovo | 89b83ee | 2026-11-17 | Závislosti ws |
 | 1 | 1.3 | hotovo | 89b83ee | 2026-11-17 | ws@8.21.0 |
