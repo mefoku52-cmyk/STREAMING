@@ -44,3 +44,7 @@
 | 7 | 7.3 | hotovo | 9b0a590 | 2026-11-17 | E2E testy (browser + smoke) |
 | 7 | 7.4 | hotovo | 9b0a590 | 2026-11-17 | KVALITA.md |
 | 7 | 7.5 | hotovo | 9b0a590 | 2026-11-17 | Záver FÁZY 7 |
+| 8 | 8.1 | hotovo | 608fef1 | 2026-11-17 | Runbook |
+| 8 | 8.2 | hotovo | 608fef1 | 2026-11-17 | TURN setup docs |
+| 8 | 8.3 | hotovo | 608fef1 | 2026-11-17 | README aktualizácia |
+| 8 | 8.4 | hotovo | 608fef1 | 2026-11-17 | Záver FÁZY 8 |
