@@ -1,0 +1,4 @@
+PASS  server.healthz — rooms=0 peers=0 worker=true
+PASS  chromium.launch — pid=8166 (fake media, auto-grant, autoplay-on)
+PASS  browser.contexts — 2 izolované browserové kontexty (publisher + viewer)
+FATAL: timeout waiting [preview+getUserMedia]; last state: Prístup zamietnutý: NotAllowedError
