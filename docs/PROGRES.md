@@ -34,3 +34,8 @@
 | 5 | 5.5 | hotovo | 9febc6b | 2026-11-17 | Error handling |
 | 5 | 5.6 | hotovo | 9febc6b | 2026-11-17 | Structured logging |
 | 5 | 5.7 | hotovo | 9febc6b | 2026-11-17 | Záver FÁZY 5 |
+| 6 | 6.1 | hotovo | ebb3587 | 2026-11-17 | Dockerfile |
+| 6 | 6.2 | hotovo | ebb3587 | 2026-11-17 | render.yaml |
+| 6 | 6.3 | hotovo | ebb3587 | 2026-11-17 | RENDER_DEPLOY.md |
+| 6 | 6.4 | hotovo | ebb3587 | 2026-11-17 | TURN setup |
+| 6 | 6.5 | hotovo | ebb3587 | 2026-11-17 | Záver FÁZY 6 |
