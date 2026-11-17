@@ -2013,3 +2013,12 @@ Presunuté do `attic/` (mimo git, ignorované):
 - RPC `getRouterRtpCapabilities`: min 1.58 ms, avg 2.55 ms, max 8.86 ms.
 - Server RSS: pred 15.66 MB, po 18.20 MB, delta 2.54 MB.
 - Prostredie: Termux/Android, Node v24, mediasoup worker aktívny, recorder vypnutý v tomto behu.
+
+## FÁZA 5 - Produkčný hardening (implementované)
+
+- `backend/src/http.js`: pridané bezpečnostné hlavičky (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy, CSP) a základný HTTP rate limiter (300 req / 5 s / IP).
+- Environment validation už existuje v `config.js` (produkčný secret, porty, positive ints).
+- WS rate limiting existuje v `signaling.js` (30 req / 5 s, close po 2 porušeniach).
+- Input validation v `protocol.js` (method whitelist, JSON size, data shape).
+- Chyby sa vracajú ako `{id, ok:false, error}` bez stack trace.
+- Logging je štruktúrovaný JSON s redakciou polí token/secret/key/password; rotácia je ponechaná na journald/deployment.

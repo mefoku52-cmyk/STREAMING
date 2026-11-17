@@ -32,8 +32,29 @@ function notFound(res) {
   res.end('{"error":"not_found"}');
 }
 
+const HTTP_RATE_LIMIT = { limit: 300, windowMs: 5000 };
+const httpRateState = new Map();
+function httpRateAllowed(ip) {
+  const now = Date.now();
+  let st = httpRateState.get(ip);
+  if (!st || now - st.start >= HTTP_RATE_LIMIT.windowMs) { st = { count: 0, start: now }; httpRateState.set(ip, st); }
+  st.count += 1;
+  return st.count <= HTTP_RATE_LIMIT.limit;
+}
+
+function setSecurityHeaders(res) {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; connect-src 'self' ws: wss:; media-src 'self' blob:; img-src 'self' data:; style-src 'self' 'unsafe-inline'");
+}
+
 function createHttpServer({ host, port, health, webRoot, staticEnabled = true, internal = null }) {
   const server = http.createServer((req, res) => {
+    setSecurityHeaders(res);
+    const ip = req.socket && req.socket.remoteAddress ? req.socket.remoteAddress : 'unknown';
+    if (!httpRateAllowed(ip)) { res.writeHead(429, { 'content-type': 'application/json' }); res.end('{"error":"rate_limited"}'); return; }
     if ((req.method === 'GET' && req.url === '/healthz') || (req.method === 'GET' && req.url === '/health')) {
       const body = JSON.stringify(health());
       res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
