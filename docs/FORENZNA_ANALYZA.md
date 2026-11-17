@@ -1991,3 +1991,11 @@ Presunuté do `attic/` (mimo git, ignorované):
 - `GET /nonexistent` => 404 `{"error":"not_found"}`.
 - `POST /internal/inspections/test/end` bez kľúča => 403 `{"error":"forbidden"}` (fail-closed).
 - `GET /publish.html` => 200 (statické súbory).
+
+## FÁZA 3.3 - WebSocket signaling test
+
+- Skript pripojil owner/viewer cez `/ws` s lokálnymi tokenmi.
+- `getRouterRtpCapabilities` vrátil codecy: audio/opus, video/H264, video/rtx, video/VP8, video/rtx.
+- `createRoom` (offerId smoke-offer) vrátil state `pending`.
+- Viewer `requestInspection` + owner `acceptInspection` + viewer `joinRoom` vrátil state `live` a rovnaké roomId.
+- Výsledok: WS_SMOKE_PASS.
