@@ -18,3 +18,14 @@
 - Nahrávky vyžadujú diskovú kvótu a retenčnú politiku.
 - Autentifikácia zostáva kompatibilná s CMEP platformou cez `CMEP_ADAPTER=http`.
 - Monitoring je založený na logoch; alerting až neskôr.
+
+## Poznámky k implementácii
+
+- Render Blueprint pripraví signaling, ale media ostáva na VPS.
+- coturn vyžaduje verejnú IP a otvorené UDP/TCP porty.
+- Nahrávky nie sú v tejto fáze automaticky zálohované.
+- Autentifikácia je založená na zdieľanom `SESSION_SIGNING_SECRET`.
+- Monitoring je minimálny; alerting je budúca úloha.
+- Škálovanie je zatiaľ vertikálne.
+
+## Koniec dokumentu
