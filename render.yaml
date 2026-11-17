@@ -1,0 +1,29 @@
+# Render Blueprint for CMEP Streaming (signaling + static only).
+# Note: Render does not provide raw UDP for mediasoup RTP. Run media/TURN on a VPS.
+services:
+  - type: web
+    name: cmep-streaming
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    plan: starter
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SIGNALING_HOST
+        value: 0.0.0.0
+      - key: SIGNALING_PORT
+        value: "8504"
+      - key: ENABLE_RECORDER
+        value: "0"
+      - key: SESSION_SIGNING_SECRET
+        sync: false
+      - key: ANNOUNCED_IP
+        sync: false
+      - key: CMEP_ADAPTER
+        value: http
+      - key: CMEP_PLATFORM_URL
+        sync: false
+      - key: CMEP_INTERNAL_API_KEY
+        sync: false
