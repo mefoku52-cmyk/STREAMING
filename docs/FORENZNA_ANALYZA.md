@@ -1983,3 +1983,11 @@ Presunuté do `attic/` (mimo git, ignorované):
 - Browser E2E (`scripts/browser-test.sh`): 22/22 PASS, vrátane obojsmerného audio/video RTP a FFmpeg nahrávky (702 audio packets, h264+aac).
 - `npm run check` prešiel (syntax JS + Python compile).
 - Poznámka: `npm test` (`node --test test/`) zlyháva na Node v24 kvôli rozlíšeniu adresára; priame glob spustenie funguje. Produkčný cieľ je Node 20.
+
+## FÁZA 3.2 - API smoke test
+
+- `GET /health` => 200, `ok:true`, `ready:true`, `workerAlive:true`, rooms=0, peers=0.
+- `GET /healthz` => 200.
+- `GET /nonexistent` => 404 `{"error":"not_found"}`.
+- `POST /internal/inspections/test/end` bez kľúča => 403 `{"error":"forbidden"}` (fail-closed).
+- `GET /publish.html` => 200 (statické súbory).
