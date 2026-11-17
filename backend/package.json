@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "mediasoup": "3.32.2",
-    "mediasoup-client": "3.26.0",
     "ws": "8.18.0"
   }
 }

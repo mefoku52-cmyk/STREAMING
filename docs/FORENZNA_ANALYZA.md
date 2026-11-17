@@ -1969,3 +1969,9 @@ Presunuté do `attic/` (mimo git, ignorované):
 - `.env` (lokálny, gitignored) a `deploy/env/.env.production.template` (produkčná šablóna) majú rozdielny účel; neboli zlúčené.
 - `config/ports.example.json` je ilustratívny a nie je načítavaný kódom; ponechaný ako dokumentácia.
 - Žiadna zmena kódu; zdroje pravdy zostávajú oddelené pre dev vs production.
+
+## FÁZA 2.4 - Nepoužívané závislosti
+
+- Odstránená závislosť `mediasoup-client` z `backend/package.json` a lockfile (`npm uninstall`).
+- Dôvod: backend kód `require('mediasoup-client')` nepoužíva; frontend používa vendored `web/vendor/mediasoup-client.min.js`.
+- Overenie: `npm run check` prešiel; priame spustenie `node --test 'test/*.js'` dalo 48 PASS a 1 FAIL v `cmep-live-e2e.test.js` kvôli externému Python `cryptography` ABI (nie kvôli zmene).
