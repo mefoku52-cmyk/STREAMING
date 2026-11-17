@@ -27,3 +27,10 @@
 | 4 | 4.2 | hotovo | daa9744 | 2026-11-17 | Rozhodnutia D1-D8 |
 | 4 | 4.3 | hotovo | b35c099 | 2026-11-17 | Návrh zmien pre produkciu |
 | 4 | 4.4 | hotovo | pending | 2026-11-17 | Záver FÁZY 4 |
+| 5 | 5.1 | hotovo | 9febc6b | 2026-11-17 | Environment validation (config) |
+| 5 | 5.2 | hotovo | 9febc6b | 2026-11-17 | Security headers |
+| 5 | 5.3 | hotovo | 9febc6b | 2026-11-17 | Rate limiting HTTP/WS |
+| 5 | 5.4 | hotovo | 9febc6b | 2026-11-17 | Input validation (protocol) |
+| 5 | 5.5 | hotovo | 9febc6b | 2026-11-17 | Error handling |
+| 5 | 5.6 | hotovo | 9febc6b | 2026-11-17 | Structured logging |
+| 5 | 5.7 | hotovo | 9febc6b | 2026-11-17 | Záver FÁZY 5 |
