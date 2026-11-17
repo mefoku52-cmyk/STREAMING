@@ -8,6 +8,12 @@
 | 0 | 0.4 | hotovo | fe2550a | 2026-11-17 | Zoznam nepushnutých commitov |
 | 0 | 0.5 | hotovo | fe2550a | 2026-11-17 | Kontrola tajomstiev (žiadne) |
 | 0 | 0.6 | hotovo | fe2550a | 2026-11-17 | Záver FÁZY 0 |
+| D1 | 1.1 | hotovo | 89b83ee | 2026-11-17 | npm ls ws + backup lock |
+| D1 | 1.2 | hotovo | 89b83ee | 2026-11-17 | Závislosti ws |
+| D1 | 1.3 | hotovo | 89b83ee | 2026-11-17 | ws@8.21.0 |
+| D1 | 1.4 | hotovo | 89b83ee | 2026-11-17 | npm audit 0 high |
+| D1 | 1.5 | hotovo | 89b83ee | 2026-11-17 | Testy + smoke PASS |
+| D1 | 1.6 | hotovo | 89b83ee | 2026-11-17 | Záver FÁZY D1 |
 | 1 | 1.1 | hotovo | 6f29411 | 2026-11-17 | Založený PROGRES.md |
 | 1 | 1.2 | hotovo | 51af09d | 2026-11-17 | Forenzný inventár v docs/FORENZNA_ANALYZA.md |
 | 1 | 1.3 | hotovo | a652c5a | 2026-11-17 | Backend forenzná analýza |
