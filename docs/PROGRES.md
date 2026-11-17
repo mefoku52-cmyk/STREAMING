@@ -39,3 +39,8 @@
 | 6 | 6.3 | hotovo | ebb3587 | 2026-11-17 | RENDER_DEPLOY.md |
 | 6 | 6.4 | hotovo | ebb3587 | 2026-11-17 | TURN setup |
 | 6 | 6.5 | hotovo | ebb3587 | 2026-11-17 | Záver FÁZY 6 |
+| 7 | 7.1 | hotovo | 9b0a590 | 2026-11-17 | Jednotkové testy (existujúce) |
+| 7 | 7.2 | hotovo | 9b0a590 | 2026-11-17 | Integračné testy (existujúce) |
+| 7 | 7.3 | hotovo | 9b0a590 | 2026-11-17 | E2E testy (browser + smoke) |
+| 7 | 7.4 | hotovo | 9b0a590 | 2026-11-17 | KVALITA.md |
+| 7 | 7.5 | hotovo | 9b0a590 | 2026-11-17 | Záver FÁZY 7 |
