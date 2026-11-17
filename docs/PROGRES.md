@@ -14,3 +14,4 @@
 | 1 | 1.10 | hotovo | 4491e03 | 2026-11-17 | Záver FÁZY 1 |
 | 2 | 2.1 | hotovo | 8270a2c | 2026-11-17 | Identifikácia kandidátov na čistenie |
 | 2 | 2.2 | hotovo | 62f5db5 | 2026-11-17 | Archivácia dočasných PHASE3F artefaktov |
+| 2 | 2.3 | hotovo | bdc3ff8 | 2026-11-17 | Revízia duplicitných konfigurácií |
