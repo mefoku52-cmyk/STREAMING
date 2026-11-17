@@ -1825,3 +1825,28 @@ createRoom, joinRoom, leaveRoom, getRouterRtpCapabilities, createWebRtcTransport
 - Žiadne framework závislosti (React/Vue/Angular).
 - `vendor` je veľký minifikovaný súbor, verzia musí byť udržiavaná manuálne.
 - `app.css` je 1 riadok, pravdepodobne minifikovaný.
+
+## Deploy artefakty (FÁZA 1.5)
+
+### Hlavné konfigurácie
+- `deploy/caddy/Caddyfile`: reverse proxy na `localhost:8504`, automatic HTTPS, TLS 1.2/1.3, statické súbory servíruje backend.
+- `deploy/coturn/turnserver.conf`: šablóna s placeholdermi `<VPS_PUBLIC_IP>`, `<TURN_REALM>`, `<TURN_SECRET>`; porty 3478/5349, relay 49152-65535.
+- `deploy/systemd/cmep-streaming.service`: Node service, env file `/etc/cmep-streaming.env`, graceful SIGTERM, ProtectSystem/ProtectHome.
+- `deploy/firewall/ufw-rules.sh`: ufw reset a pravidlá pre SSH/HTTPS/mediasoup/coturn.
+- `deploy/env/.env.production.template`: produkčné env premenné (placeholder hodnoty).
+
+### Skripty
+- `deploy/scripts/deploy.sh`: root-only deploy na VPS s preflight, rsync, npm ci, konfigurácia, systemd/caddy/coturn, health check.
+- `deploy/scripts/health-check.sh`: liveness/readiness cez `/healthz` a `/health`.
+- `deploy/scripts/rollback.sh`: rollback na predchádzajúci release.
+- `deploy/scripts/check-worker.sh`: kontrola mediasoup worker binary.
+- `deploy/turn-credentials/*`: generovanie a test TURN credentials.
+
+### Dočasné súbory
+- `deploy/PHASE3F_*.txt` a `deploy/phase3f_runA|runB|runs/*.log` sú diagnostické artefakty z predchádzajúcich testov (FÁZA 2 rozhodne o archivácii/zmazaní).
+- `deploy/PHASE*.md` a `FINAL_*` sú reporty z predchádzajúcich fáz.
+
+### Zistenia
+- Deploy artefakty sú orientované na VPS (systemd/Caddy/coturn), nie na Render.com (FÁZA 6 upraví).
+- Coturn konfigurácia je šablóna s placeholdermi, nie pripravená na priame použitie.
+- Firewall otvára široký rozsah relay portov; je to očakávané pre coturn.
