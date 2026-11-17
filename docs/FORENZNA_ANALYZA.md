@@ -1940,3 +1940,18 @@ NPM skript `check` overuje syntax JS a Python.
 ### Zistenia
 - Aktuálny server nie je spustený; pred testami treba spustiť `scripts/start.sh`.
 - Recorder bol v minulých behoch aktívny a vytváral FLV súbory.
+
+## FÁZA 2 - Čistenie (kandidáti)
+
+### Mŕtve / dočasné / zaťažujúce
+- `deploy/PHASE3F_*.txt` a `deploy/phase3f_runA|runB|runs/*.log`: dočasné diagnostické artefakty z predchádzajúceho debugovania (273 riadkov text + ~39 logov).
+- `tools/diag_3f_*.sh|js`: dočasné diagnostické skripty pre fázu 3F.
+- `backend` závislosť `mediasoup-client`: frontend používa vendored `web/vendor/mediasoup-client.min.js`; backend kód `require('mediasoup-client')` nepoužíva.
+- `python/server.py`: loopback-only static dev server; backend už servíruje statické súbory. Ponechané ako dev nástroj, nie odstránené bez ďalšieho schválenia.
+
+### Duplicitné konfigurácie
+- `.env.example` (lokálny vývoj) a `deploy/env/.env.production.template` (produkcia) majú rozdielny účel; nie sú zlúčené.
+- `config/ports.example.json` je ilustratívny a nie je načítavaný kódom.
+
+### Nepoužívané závislosti
+- `mediasoup-client` v `backend/package.json` (potvrdené grepom: žiadny `require/import` v backend).
