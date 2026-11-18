@@ -305,3 +305,15 @@ document.querySelector('#stop').addEventListener('click', async () => {
 
 const __startStreamBtn = document.querySelector('#startStream');
 if (__startStreamBtn) __startStreamBtn.addEventListener('click', () => { const b = document.querySelector('#start'); if (b) b.click(); });
+
+// BEGIN syncStartStream
+// Tlacidlo "Spustit stream" je dostupne vtedy, ked je dostupne "Vytvorit obhliadku" (#start).
+(function () {
+  const startStream = document.querySelector('#startStream');
+  const start = document.querySelector('#start');
+  if (!startStream || !start) return;
+  const sync = () => { startStream.disabled = start.disabled; };
+  new MutationObserver(sync).observe(start, { attributes: true, attributeFilter: ['disabled'] });
+  sync();
+})();
+// END syncStartStream
